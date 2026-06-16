@@ -1,0 +1,92 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write   # REQUIRED to create GitHub releases
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      # -----------------------------
+      # Checkout
+      # -----------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # REQUIRED for git tags & changelog
+
+      # -----------------------------
+      # Java
+      # -----------------------------
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'microsoft'
+          cache: maven
+
+      # -----------------------------
+      # Build with Maven
+      # -----------------------------
+      - name: Build with Maven
+        run: mvn -B clean package --file pom.xml
+
+      # -----------------------------
+      # Find the JAR file
+      # -----------------------------
+      - name: Find JAR
+        run: |
+          echo "📦 target/ contents:"
+          ls -la target/
+
+          # Find the main JAR (not original, not shaded if you have both)
+          JAR_FILE=$(ls target/*-*.jar \
+            | grep -v original \
+            | grep -v sources \
+            | head -n 1)
+
+          if [ -z "$JAR_FILE" ]; then
+            echo "❌ ERROR: No JAR found"
+            exit 1
+          fi
+
+          echo "✅ Found JAR: $JAR_FILE"
+          echo "JAR_FILE=$JAR_FILE" >> "$GITHUB_ENV"
+          echo "JAR_NAME=$(basename "$JAR_FILE")" >> "$GITHUB_ENV"
+
+      # -----------------------------
+      # Generate changelog (since last tag)
+      # -----------------------------
+      - name: Generate changelog
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "## Changes" > CHANGELOG.md
+
+          if [ -z "$LAST_TAG" ]; then
+            echo "_Initial release_" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            git log --pretty=format:"- %s (%h)" >> CHANGELOG.md
+          else
+            echo "_Changes since $LAST_TAG_" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)" >> CHANGELOG.md
+          fi
+
+      # -----------------------------
+      # GitHub Release
+      # -----------------------------
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.JAR_FILE }}
+          tag_name: v${{ github.run_number }}
+          name: JByteModZ New Build ${{ github.run_number }}
+          body_path: CHANGELOG.md
+          overwrite_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
