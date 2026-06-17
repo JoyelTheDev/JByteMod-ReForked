@@ -261,6 +261,8 @@ public class JByteMod extends JFrame {
     public me.grax.jbytemod.res.Options getOptions() { return options; }
     public me.grax.jbytemod.res.LanguageRes getLanguageRes() { return languageRes; }
     public JarArchive getJarArchive() { return jarArchive; }
+    public ClassNode getCurrentNode() { return currentNode; }
+    public MethodNode getCurrentMethod() { return currentMethod; }
 
     private void setTitleSuffix(String suffix) {
         this.setTitle(title + " - " + suffix);
@@ -276,6 +278,7 @@ public class JByteMod extends JFrame {
     }
 
     public void treeSelection(ClassNode cn, MethodNode mn) {
+        //selection may take some time
         new Thread(() -> {
             DefaultTreeModel tm = (DefaultTreeModel) jarTree.getModel();
             if (this.selectEntry(mn, tm, (SortedTreeNode) tm.getRoot())) {

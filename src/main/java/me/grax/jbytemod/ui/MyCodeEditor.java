@@ -2,6 +2,7 @@ package me.grax.jbytemod.ui;
 
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.ui.lists.AdressList;
+import me.grax.jbytemod.bookmark.BookmarkGutter;
 import me.grax.jbytemod.ui.lists.ErrorList;
 import me.grax.jbytemod.ui.lists.MyCodeList;
 
@@ -15,13 +16,19 @@ public class MyCodeEditor extends JPanel {
         this.setLayout(new BorderLayout());
         cl = new MyCodeList(jbm, editor);
         this.add(cl, BorderLayout.CENTER);
-        JPanel p = new JPanel();
-        p.setLayout(new BorderLayout());
-        p.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIManager.getColor("nimbusBorder")));
-        p.add(new AdressList(cl), BorderLayout.CENTER);
-        this.add(p, BorderLayout.WEST);
-        this.add(new ErrorList(jbm, cl), BorderLayout.EAST);
 
+        JPanel left = new JPanel();
+        left.setLayout(new BorderLayout());
+        left.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIManager.getColor("nimbusBorder")));
+
+        BookmarkGutter gutter = new BookmarkGutter(cl);
+        cl.setBookmarkGutter(gutter);
+
+        left.add(new AdressList(cl), BorderLayout.CENTER);
+        left.add(gutter, BorderLayout.WEST);
+
+        this.add(left, BorderLayout.WEST);
+        this.add(new ErrorList(jbm, cl), BorderLayout.EAST);
     }
 
     public MyCodeList getEditor() {

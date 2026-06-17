@@ -9,6 +9,8 @@ import me.grax.jbytemod.ui.dialogue.InsnEditDialogue;
 import me.grax.jbytemod.ui.lists.entries.FieldEntry;
 import me.grax.jbytemod.ui.lists.entries.InstrEntry;
 import me.grax.jbytemod.ui.lists.entries.PrototypeEntry;
+import me.grax.jbytemod.bookmark.BookmarkGutter;
+import me.grax.jbytemod.bookmark.BookmarkManager;
 import me.grax.jbytemod.undo.MethodUndoManager;
 import me.grax.jbytemod.utils.ErrorDisplay;
 import me.grax.jbytemod.utils.HtmlSelection;
@@ -30,11 +32,14 @@ public class MyCodeList extends JList<InstrEntry> {
     private JLabel editor;
     private AdressList adressList;
     private ErrorList errorList;
+    private BookmarkGutter bookmarkGutter;
     private MethodNode currentMethod;
     private ClassNode currentClass;
+    private JByteMod jbm;
 
     public MyCodeList(JByteMod jam, JLabel editor) {
         super(new LazyListModel<InstrEntry>());
+        this.jbm = jam;
         this.editor = editor;
         this.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
         this.setFocusable(false);
@@ -88,6 +93,7 @@ public class MyCodeList extends JList<InstrEntry> {
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, 0), "down");
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK), "undo");
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK), "redo");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_MASK), "bookmark");
         am.put("search", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -192,6 +198,24 @@ public class MyCodeList extends JList<InstrEntry> {
                         Main.INSTANCE.getLogger().log("Nothing to redo.");
                     }
                 }
+            }
+        });
+        am.put("bookmark", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                InstrEntry entry = getSelectedValue();
+                if (entry == null || entry.getMethod() == null) return;
+                AbstractInsnNode ain = entry.getInstr();
+                if (BookmarkManager.get().isBookmarked(ain)) {
+                    BookmarkManager.get().remove(ain);
+                } else {
+                    String label = JOptionPane.showInputDialog(MyCodeList.this, "Bookmark label (optional):", "");
+                    if (label != null) {
+                        BookmarkManager.get().add(currentClass != null ? currentClass : jbm.getCurrentNode(),
+                                currentMethod, ain, label);
+                    }
+                }
+                if (bookmarkGutter != null) bookmarkGutter.update();
             }
         });
         addMouseMotionListener(new MouseMotionAdapter() {
@@ -483,6 +507,25 @@ public class MyCodeList extends JList<InstrEntry> {
             remove.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
             menu.add(copyText());
             menu.add(remove);
+            JMenuItem bookmarkItem;
+            if (BookmarkManager.get().isBookmarked(ain)) {
+                bookmarkItem = new JMenuItem("Remove Bookmark");
+                bookmarkItem.addActionListener(e -> {
+                    BookmarkManager.get().remove(ain);
+                    if (bookmarkGutter != null) bookmarkGutter.update();
+                });
+            } else {
+                bookmarkItem = new JMenuItem("Add Bookmark");
+                bookmarkItem.addActionListener(e -> {
+                    String label = JOptionPane.showInputDialog(MyCodeList.this, "Bookmark label (optional):", "");
+                    if (label != null) {
+                        BookmarkManager.get().add(jbm.getCurrentNode(), mn, ain, label);
+                        if (bookmarkGutter != null) bookmarkGutter.update();
+                    }
+                });
+            }
+            bookmarkItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_MASK));
+            menu.add(bookmarkItem);
             addPopupListener(menu);
             menu.show(jbm, (int) jbm.getMousePosition().getX(), (int) jbm.getMousePosition().getY());
         }
@@ -616,6 +659,9 @@ public class MyCodeList extends JList<InstrEntry> {
         if (errorList != null) {
             errorList.updateErrors();
         }
+        if (bookmarkGutter != null) {
+            bookmarkGutter.update();
+        }
         return true;
     }
 
@@ -636,7 +682,6 @@ public class MyCodeList extends JList<InstrEntry> {
             entries.add(entry);
         }
         this.setModel(lm);
-        //update sidebar
         if (adressList != null) {
             adressList.updateAdr();
         }
@@ -648,6 +693,10 @@ public class MyCodeList extends JList<InstrEntry> {
 
     public void setErrorList(ErrorList errorList) {
         this.errorList = errorList;
+    }
+
+    public void setBookmarkGutter(BookmarkGutter bookmarkGutter) {
+        this.bookmarkGutter = bookmarkGutter;
     }
 
     public void snapshotCurrentMethod() {

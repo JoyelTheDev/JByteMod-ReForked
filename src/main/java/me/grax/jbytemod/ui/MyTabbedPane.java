@@ -3,6 +3,7 @@ package me.grax.jbytemod.ui;
 import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.ui.lists.SearchList;
+import me.grax.jbytemod.bookmark.BookmarkPanel;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -26,6 +27,8 @@ public class MyTabbedPane extends JTabbedPane {
         JLabel search = new JLabel(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("search_results"));
         this.addTab(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("search"), this.withBorder(search, searchList));
         this.addTab("Opcodes", this.withBorder(new JLabel("Opcodes"), new OpcodeTable()));
+        BookmarkPanel bookmarkPanel = new BookmarkPanel(jbm);
+        this.addTab("Bookmarks", this.withBorder(new JLabel("Bookmarks"), bookmarkPanel));
         //MethodRefPanel mrp = new MethodRefPanel(jbm);
         //jbm.setMethodRefPanel(mrp);
         //this.addTab("References", mrp);
