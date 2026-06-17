@@ -100,6 +100,7 @@ public class MyMenuBar extends JMenuBar {
         edit.add(redo);
 
         this.add(edit);
+    }
 
     private void initFileMenu() {
         JMenu file = new JMenu(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("file"));
