@@ -255,6 +255,13 @@ public class JByteMod extends JFrame {
         }
     }
 
+    public me.grax.jbytemod.ui.lists.MyCodeList getCodeList() { return codeList; }
+    public me.grax.jbytemod.ui.ClassTree getJarTree() { return jarTree; }
+    public de.xbrowniecodez.jbytemod.ui.lists.SearchList getSearchList() { return searchList; }
+    public me.grax.jbytemod.res.Options getOptions() { return options; }
+    public me.grax.jbytemod.res.LanguageRes getLanguageRes() { return languageRes; }
+    public JarArchive getJarArchive() { return jarArchive; }
+
     private void setTitleSuffix(String suffix) {
         this.setTitle(title + " - " + suffix);
     }
@@ -269,7 +276,6 @@ public class JByteMod extends JFrame {
     }
 
     public void treeSelection(ClassNode cn, MethodNode mn) {
-        //selection may take some time
         new Thread(() -> {
             DefaultTreeModel tm = (DefaultTreeModel) jarTree.getModel();
             if (this.selectEntry(mn, tm, (SortedTreeNode) tm.getRoot())) {

@@ -7,6 +7,7 @@ import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.plugin.Plugin;
 import de.xbrowniecodez.jbytemod.ui.StringDecryptorDialog;
+import me.grax.jbytemod.undo.MethodUndoManager;
 import me.grax.jbytemod.res.LanguageRes;
 import me.grax.jbytemod.res.Option;
 import me.grax.jbytemod.res.Options;
@@ -44,7 +45,61 @@ public class MyMenuBar extends JMenuBar {
         this.jbm = jam;
         this.agent = agent;
         this.initFileMenu();
+        this.initEditMenu();
     }
+
+    private void initEditMenu() {
+        JMenu edit = new JMenu("Edit");
+
+        JMenuItem undo = new JMenuItem("Undo");
+        undo.setAccelerator(KeyStroke.getKeyStroke('Z', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        undo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                me.grax.jbytemod.ui.lists.MyCodeList cl = jbm.getCodeList();
+                if (cl != null) {
+                    org.objectweb.asm.tree.MethodNode mn = cl.getCurrentMethod();
+                    if (mn != null) {
+                        org.objectweb.asm.tree.InsnList restored =
+                            MethodUndoManager.get(mn).undo(mn.instructions);
+                        if (restored != null) {
+                            mn.instructions = restored;
+                            me.lpk.util.OpUtils.clearLabelCache();
+                            cl.loadInstructions(mn);
+                            Main.INSTANCE.getLogger().log("Undo applied.");
+                        } else {
+                            Main.INSTANCE.getLogger().log("Nothing to undo.");
+                        }
+                    }
+                }
+            }
+        });
+        edit.add(undo);
+
+        JMenuItem redo = new JMenuItem("Redo");
+        redo.setAccelerator(KeyStroke.getKeyStroke('Y', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        redo.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                me.grax.jbytemod.ui.lists.MyCodeList cl = jbm.getCodeList();
+                if (cl != null) {
+                    org.objectweb.asm.tree.MethodNode mn = cl.getCurrentMethod();
+                    if (mn != null) {
+                        org.objectweb.asm.tree.InsnList restored =
+                            MethodUndoManager.get(mn).redo(mn.instructions);
+                        if (restored != null) {
+                            mn.instructions = restored;
+                            me.lpk.util.OpUtils.clearLabelCache();
+                            cl.loadInstructions(mn);
+                            Main.INSTANCE.getLogger().log("Redo applied.");
+                        } else {
+                            Main.INSTANCE.getLogger().log("Nothing to redo.");
+                        }
+                    }
+                }
+            }
+        });
+        edit.add(redo);
+
+        this.add(edit);
 
     private void initFileMenu() {
         JMenu file = new JMenu(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("file"));

@@ -93,6 +93,7 @@ public class InsnEditDialogue extends ClassDialogue {
                 AbstractInsnNode newnode = (AbstractInsnNode) node.getConstructor().newInstance();
                 //we need no edit for LabelNode
                 if (!hasSettings(newnode) || new InsnEditDialogue(mn, newnode).open()) {
+                    Main.INSTANCE.getJByteMod().getCodeList().snapshotCurrentMethod();
                     if (ain != null) {
                         if (after) {
                             mn.instructions.insert(ain, newnode);

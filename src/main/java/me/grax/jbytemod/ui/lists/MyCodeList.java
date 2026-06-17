@@ -9,9 +9,11 @@ import me.grax.jbytemod.ui.dialogue.InsnEditDialogue;
 import me.grax.jbytemod.ui.lists.entries.FieldEntry;
 import me.grax.jbytemod.ui.lists.entries.InstrEntry;
 import me.grax.jbytemod.ui.lists.entries.PrototypeEntry;
+import me.grax.jbytemod.undo.MethodUndoManager;
 import me.grax.jbytemod.utils.ErrorDisplay;
 import me.grax.jbytemod.utils.HtmlSelection;
 import me.grax.jbytemod.utils.list.LazyListModel;
+import org.objectweb.asm.tree.InsnList;
 import me.lpk.util.OpUtils;
 import org.objectweb.asm.tree.*;
 
@@ -55,6 +57,7 @@ public class MyCodeList extends JList<InstrEntry> {
                     if (mn != null) {
                         try {
                             if (InsnEditDialogue.canEdit(entry.getInstr())) {
+                                MethodUndoManager.get(mn).snapshot(mn.instructions);
                                 new InsnEditDialogue(mn, entry.getInstr()).open();
                             }
                         } catch (Exception e1) {
@@ -83,6 +86,8 @@ public class MyCodeList extends JList<InstrEntry> {
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "delete");
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, 0), "up");
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, 0), "down");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_MASK), "undo");
+        im.put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK), "redo");
         am.put("search", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -151,6 +156,40 @@ public class MyCodeList extends JList<InstrEntry> {
                     int index = getSelectedIndex();
                     if (moveDown(entry.getMethod(), entry.getInstr())) {
                         setSelectedIndex(index + 1);
+                    }
+                }
+            }
+        });
+        am.put("undo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (currentMethod != null) {
+                    MethodUndoManager mgr = MethodUndoManager.get(currentMethod);
+                    InsnList restored = mgr.undo(currentMethod.instructions);
+                    if (restored != null) {
+                        currentMethod.instructions = restored;
+                        OpUtils.clearLabelCache();
+                        loadInstructions(currentMethod);
+                        Main.INSTANCE.getLogger().log("Undo applied.");
+                    } else {
+                        Main.INSTANCE.getLogger().log("Nothing to undo.");
+                    }
+                }
+            }
+        });
+        am.put("redo", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (currentMethod != null) {
+                    MethodUndoManager mgr = MethodUndoManager.get(currentMethod);
+                    InsnList restored = mgr.redo(currentMethod.instructions);
+                    if (restored != null) {
+                        currentMethod.instructions = restored;
+                        OpUtils.clearLabelCache();
+                        loadInstructions(currentMethod);
+                        Main.INSTANCE.getLogger().log("Redo applied.");
+                    } else {
+                        Main.INSTANCE.getLogger().log("Nothing to redo.");
                     }
                 }
             }
@@ -280,6 +319,7 @@ public class MyCodeList extends JList<InstrEntry> {
             JMenuItem remove = new JMenuItem(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("remove_all"));
             remove.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    MethodUndoManager.get(mn).snapshot(mn.instructions);
                     for (InstrEntry sel : selected) {
                         mn.instructions.remove(sel.getInstr());
                     }
@@ -325,6 +365,7 @@ public class MyCodeList extends JList<InstrEntry> {
                 edit.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
                         try {
+                            MethodUndoManager.get(mn).snapshot(mn.instructions);
                             new InsnEditDialogue(mn, ain).open();
                         } catch (Exception e1) {
                             new ErrorDisplay(e1);
@@ -448,6 +489,7 @@ public class MyCodeList extends JList<InstrEntry> {
     }
 
     protected void removeNode(MethodNode mn, AbstractInsnNode ain) {
+        MethodUndoManager.get(mn).snapshot(mn.instructions);
         mn.instructions.remove(ain);
         OpUtils.clearLabelCache();
         loadInstructions(mn);
@@ -456,6 +498,7 @@ public class MyCodeList extends JList<InstrEntry> {
     protected boolean moveDown(MethodNode mn, AbstractInsnNode ain) {
         AbstractInsnNode node = ain.getNext();
         if (node != null) {
+            MethodUndoManager.get(mn).snapshot(mn.instructions);
             mn.instructions.remove(node);
             mn.instructions.insertBefore(ain, node);
             OpUtils.clearLabelCache();
@@ -468,6 +511,7 @@ public class MyCodeList extends JList<InstrEntry> {
     protected boolean moveUp(MethodNode mn, AbstractInsnNode ain) {
         AbstractInsnNode node = ain.getPrevious();
         if (node != null) {
+            MethodUndoManager.get(mn).snapshot(mn.instructions);
             mn.instructions.remove(node);
             mn.instructions.insert(ain, node);
             OpUtils.clearLabelCache();
@@ -479,6 +523,7 @@ public class MyCodeList extends JList<InstrEntry> {
 
     protected void duplicate(MethodNode mn, AbstractInsnNode ain) {
         try {
+            MethodUndoManager.get(mn).snapshot(mn.instructions);
             if (ain instanceof LabelNode) {
                 mn.instructions.insert(ain, new LabelNode());
                 OpUtils.clearLabelCache();
@@ -603,5 +648,15 @@ public class MyCodeList extends JList<InstrEntry> {
 
     public void setErrorList(ErrorList errorList) {
         this.errorList = errorList;
+    }
+
+    public void snapshotCurrentMethod() {
+        if (currentMethod != null) {
+            MethodUndoManager.get(currentMethod).snapshot(currentMethod.instructions);
+        }
+    }
+
+    public MethodNode getCurrentMethod() {
+        return currentMethod;
     }
 }
