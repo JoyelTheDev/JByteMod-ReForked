@@ -30,8 +30,10 @@ public enum Main {
             this.printHelpAndExit();
         }
         this.discord = new Discord("1184572566795468881");
-        this.loadFileIfNeeded(cmd, jByteMod);
-        SwingUtilities.invokeLater(() -> this.jByteMod.setVisible(true));
+        SwingUtilities.invokeLater(() -> {
+            this.jByteMod.setVisible(true);
+            this.loadFileIfNeeded(cmd, jByteMod);
+        });
         this.updateChecker = new UpdateChecker();
     }
 
