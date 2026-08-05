@@ -103,4 +103,4 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ---
 
-Portions derived from [java-deobfuscator](https://github.com/java-deobfuscator), [Radon](https://github.com/ItzSomebody/Radon), and [ObjectWeb ASM](https://asm.ow2.io/) (BSD-3-Clause).
+Portions derived from [java-deobfuscator](https://github.com/java-deobfuscator), [Radon](https://github.com/ItzSomebody/Radon), and [ObjectWeb ASM](https://asm.ow2.io/) .
