@@ -124,7 +124,8 @@ public class XrefStatsFrame extends JFrame {
                             || e.getKey().toString().toLowerCase().contains(query))
                     .sorted(Comparator.comparingInt((Map.Entry<MemberKey, List<XrefEntry>> e) ->
                             e.getValue().size()).reversed())
-                    .map(e -> new StatRow(e.getKey().toString(),
+                    .map(e -> new StatRow(
+                            e.getKey().toString(),
                             e.getValue().size(),
                             describeKinds(e.getValue())))
                     .collect(Collectors.toList());
@@ -134,7 +135,8 @@ public class XrefStatsFrame extends JFrame {
                             || e.getKey().toLowerCase().contains(query))
                     .sorted(Comparator.comparingInt((Map.Entry<String, List<XrefEntry>> e) ->
                             e.getValue().size()).reversed())
-                    .map(e -> new StatRow(e.getKey(),
+                    .map(e -> new StatRow(
+                            e.getKey(),
                             e.getValue().size(),
                             describeKinds(e.getValue())))
                     .collect(Collectors.toList());
@@ -181,7 +183,17 @@ public class XrefStatsFrame extends JFrame {
                 .collect(Collectors.joining(", "));
     }
 
-    private record StatRow(String key, int count, String kindSummary) {}
+    private static final class StatRow {
+        final String key;
+        final int count;
+        final String kindSummary;
+
+        StatRow(String key, int count, String kindSummary) {
+            this.key = key;
+            this.count = count;
+            this.kindSummary = kindSummary;
+        }
+    }
 
     private static class StatsTableModel extends AbstractTableModel {
         private static final String[] COLS = {"Member / Class", "Ref Count", "Kind Breakdown"};
@@ -206,12 +218,10 @@ public class XrefStatsFrame extends JFrame {
         @Override
         public Object getValueAt(int row, int col) {
             StatRow r = rows.get(row);
-            return switch (col) {
-                case 0 -> r.key();
-                case 1 -> r.count();
-                case 2 -> r.kindSummary();
-                default -> "";
-            };
+            if (col == 0) return r.key;
+            if (col == 1) return r.count;
+            if (col == 2) return r.kindSummary;
+            return "";
         }
     }
 }

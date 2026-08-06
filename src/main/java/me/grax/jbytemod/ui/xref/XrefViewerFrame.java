@@ -199,14 +199,12 @@ public class XrefViewerFrame extends JFrame {
         @Override
         public Object getValueAt(int row, int col) {
             XrefEntry e = entries.get(row);
-            return switch (col) {
-                case 0 -> e.getKind();
-                case 1 -> e.getAccess().getText();
-                case 2 -> e.getKind().getDisplayName();
-                case 3 -> e.getInvocation();
-                case 4 -> e.getWhereText();
-                default -> "";
-            };
+            if (col == 0) return e.getKind();
+            if (col == 1) return e.getAccess().getText();
+            if (col == 2) return e.getKind().getDisplayName();
+            if (col == 3) return e.getInvocation();
+            if (col == 4) return e.getWhereText();
+            return "";
         }
 
         @Override
@@ -225,7 +223,8 @@ public class XrefViewerFrame extends JFrame {
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int col) {
-            if (value instanceof XrefKind kind) {
+            if (value instanceof XrefKind) {
+                XrefKind kind = (XrefKind) value;
                 setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
                 setIcon(new KindIcon(kind.getColor()));
                 setToolTipText(kind.getDisplayName());
