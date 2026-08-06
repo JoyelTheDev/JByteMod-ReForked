@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 import de.xbrowniecodez.jbytemod.plugin.Plugin;
 import de.xbrowniecodez.jbytemod.plugin.PluginManager;
+import me.grax.jbytemod.xref.XrefManager;
 import me.grax.jbytemod.JarArchive;
 import me.grax.jbytemod.res.LanguageRes;
 import me.grax.jbytemod.res.Options;
@@ -162,12 +163,24 @@ public class JByteMod extends JFrame {
     private void loadZipFile(File input) {
         jarArchive = new JarArchive(this, input);
         setTitleSuffix(input.getName());
+        buildXrefIndex();
     }
 
     private void loadClassFile(File input) throws Exception {
         jarArchive = new JarArchive(BytecodeUtils.getClassNodeFromBytes(Files.readAllBytes(input.toPath())));
         setTitleSuffix(input.getName());
         refreshTree();
+        buildXrefIndex();
+    }
+
+    private void buildXrefIndex() {
+        Main.INSTANCE.getLogger().log("Building Xref index...");
+        XrefManager.getInstance().buildAsync(jarArchive, () ->
+                Main.INSTANCE.getLogger().log("Xref index built (" +
+                        XrefManager.getInstance().getCurrentMap().getAllMemberRefs().size() +
+                        " member refs, " +
+                        XrefManager.getInstance().getCurrentMap().getAllClassRefs().size() +
+                        " class refs)."));
     }
 
     private void displayJarWarning() {

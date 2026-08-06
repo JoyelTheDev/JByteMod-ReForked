@@ -19,6 +19,8 @@ import me.grax.jbytemod.utils.TextUtils;
 import me.grax.jbytemod.utils.attach.AttachUtils;
 import me.grax.jbytemod.utils.gui.LookUtils;
 import me.grax.jbytemod.utils.list.LazyListModel;
+import me.grax.jbytemod.ui.xref.XrefStatsFrame;
+import me.grax.jbytemod.xref.XrefManager;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.tree.*;
 import sun.tools.attach.WindowsAttachProvider;
@@ -627,6 +629,43 @@ public class MyMenuBar extends JMenuBar {
         });
         debugMenu.add(jdwpDisconnect);
         this.add(debugMenu);
+
+        JMenu xrefMenu = new JMenu("Xref");
+
+        JMenuItem xrefStats = new JMenuItem("Xref Statistics...");
+        xrefStats.setAccelerator(KeyStroke.getKeyStroke('X', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+        xrefStats.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new XrefStatsFrame(jbm).setVisible(true);
+            }
+        });
+        xrefMenu.add(xrefStats);
+
+        JMenuItem rebuildXref = new JMenuItem("Rebuild Xref Index");
+        rebuildXref.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (jbm.getJarArchive() == null) {
+                    JOptionPane.showMessageDialog(jbm, "No file loaded.", "Xref", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                rebuildXref.setEnabled(false);
+                rebuildXref.setText("Building...");
+                XrefManager.getInstance().buildAsync(jbm.getJarArchive(), () -> {
+                    rebuildXref.setText("Rebuild Xref Index");
+                    rebuildXref.setEnabled(true);
+                    JOptionPane.showMessageDialog(jbm,
+                            "Xref index rebuilt.\n" +
+                                    XrefManager.getInstance().getCurrentMap().getAllMemberRefs().size() + " member refs\n" +
+                                    XrefManager.getInstance().getCurrentMap().getAllClassRefs().size() + " class refs",
+                            "Xref Index Ready", JOptionPane.INFORMATION_MESSAGE);
+                });
+            }
+        });
+        xrefMenu.add(rebuildXref);
+
+        this.add(xrefMenu);
     }
 
     protected void canNotFindFile() {

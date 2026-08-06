@@ -15,6 +15,10 @@ import me.grax.jbytemod.undo.MethodUndoManager;
 import me.grax.jbytemod.utils.ErrorDisplay;
 import me.grax.jbytemod.utils.HtmlSelection;
 import me.grax.jbytemod.utils.list.LazyListModel;
+import me.grax.jbytemod.ui.xref.MemberXrefAction;
+import me.grax.jbytemod.ui.xref.XrefViewerFrame;
+import me.grax.jbytemod.xref.XrefEntry;
+import me.grax.jbytemod.xref.XrefManager;
 import org.objectweb.asm.tree.InsnList;
 import me.lpk.util.OpUtils;
 import org.objectweb.asm.tree.*;
@@ -445,8 +449,28 @@ public class MyCodeList extends JList<InstrEntry> {
                     }
                 });
 
+                JMenuItem xrefMethod = new JMenuItem("Find Usages (Xref)");
+                xrefMethod.setAccelerator(KeyStroke.getKeyStroke('U', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+                xrefMethod.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        MethodInsnNode min = (MethodInsnNode) ain;
+                        java.util.List<XrefEntry> refs = XrefManager.getInstance()
+                                .getMemberRefs(min.owner, min.name, min.desc);
+                        if (refs.isEmpty()) {
+                            JOptionPane.showMessageDialog(jbm,
+                                    "No xrefs found for: " + min.owner + "." + min.name + min.desc,
+                                    "No Xrefs", JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            new XrefViewerFrame(jbm,
+                                    min.owner + "." + min.name, refs).setVisible(true);
+                        }
+                    }
+                });
+
                 menu.add(edit);
                 menu.add(find_usage);
+                menu.add(xrefMethod);
             }
             if (ain instanceof FieldInsnNode) {
                 JMenuItem edit = new JMenuItem(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("go_to_dec"));
@@ -471,8 +495,27 @@ public class MyCodeList extends JList<InstrEntry> {
                     }
                 });
 
+                JMenuItem xrefField = new JMenuItem("Find Usages (Xref)");
+                xrefField.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        FieldInsnNode fin = (FieldInsnNode) ain;
+                        java.util.List<XrefEntry> refs = XrefManager.getInstance()
+                                .getMemberRefs(fin.owner, fin.name, fin.desc);
+                        if (refs.isEmpty()) {
+                            JOptionPane.showMessageDialog(jbm,
+                                    "No xrefs found for field: " + fin.owner + "." + fin.name,
+                                    "No Xrefs", JOptionPane.INFORMATION_MESSAGE);
+                        } else {
+                            new XrefViewerFrame(jbm,
+                                    fin.owner + "." + fin.name, refs).setVisible(true);
+                        }
+                    }
+                });
+
                 menu.add(edit);
                 menu.add(find_usage);
+                menu.add(xrefField);
             }
             JMenuItem duplicate = new JMenuItem(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("duplicate"));
             duplicate.addActionListener(new ActionListener() {

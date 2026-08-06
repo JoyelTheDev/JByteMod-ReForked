@@ -8,6 +8,8 @@ import me.grax.jbytemod.ui.tree.SortedTreeNode;
 import me.grax.jbytemod.utils.ErrorDisplay;
 import me.grax.jbytemod.utils.MethodUtils;
 import me.grax.jbytemod.utils.asm.FrameGen;
+import me.grax.jbytemod.ui.xref.ClassXrefAction;
+import me.grax.jbytemod.ui.xref.MemberXrefAction;
 import me.lpk.util.drop.IDropUser;
 import me.lpk.util.drop.JarDropHandler;
 import org.objectweb.asm.tree.ClassNode;
@@ -206,6 +208,13 @@ public class ClassTree extends JTree implements IDropUser {
                                 }
                             });
                             menu.add(search);
+                            JMenuItem findMethodXref = new JMenuItem("Find Method Usages (Xref)");
+                            findMethodXref.addActionListener(new ActionListener() {
+                                public void actionPerformed(ActionEvent e) {
+                                    MemberXrefAction.showForMethod(jbm, cn.name, mn);
+                                }
+                            });
+                            menu.add(findMethodXref);
                             JMenuItem remove = new JMenuItem(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("remove"));
                             remove.addActionListener(new ActionListener() {
                                 public void actionPerformed(ActionEvent e) {
@@ -306,6 +315,13 @@ public class ClassTree extends JTree implements IDropUser {
                                     }
                                 }
                             });
+                            JMenuItem findClassXref = new JMenuItem("Find Class Usages (Xref)");
+                            findClassXref.addActionListener(new ActionListener() {
+                                public void actionPerformed(ActionEvent e) {
+                                    ClassXrefAction.show(jbm, cn);
+                                }
+                            });
+                            menu.add(findClassXref);
                             menu.add(remove);
                             tools.add(frames);
                             menu.add(tools);
