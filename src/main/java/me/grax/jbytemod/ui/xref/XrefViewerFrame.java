@@ -23,9 +23,9 @@ public class XrefViewerFrame extends JFrame {
 
     private final XrefTableModel tableModel;
     private final JTable table;
-    private final JTextField searchField;
+    private JTextField searchField;
     private final Map<XrefKind, JCheckBox> kindFilters = new LinkedHashMap<>();
-    private final JLabel countLabel;
+    private JLabel countLabel;
 
     public XrefViewerFrame(JByteMod jbm, String title, List<XrefEntry> entries) {
         super("Xrefs: " + title);
