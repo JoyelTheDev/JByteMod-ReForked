@@ -22,6 +22,7 @@ import me.grax.jbytemod.utils.list.LazyListModel;
 import me.grax.jbytemod.ui.xref.XrefStatsFrame;
 import me.grax.jbytemod.xref.XrefManager;
 import org.apache.commons.io.IOUtils;
+import dev.joyel.pattern.ui.PatternMenuIntegration;
 import org.objectweb.asm.tree.*;
 import sun.tools.attach.WindowsAttachProvider;
 
@@ -48,6 +49,7 @@ public class MyMenuBar extends JMenuBar {
         this.agent = agent;
         this.initFileMenu();
         this.initEditMenu();
+        PatternMenuIntegration.installInto(this, jam);   
     }
 
     private void initEditMenu() {
