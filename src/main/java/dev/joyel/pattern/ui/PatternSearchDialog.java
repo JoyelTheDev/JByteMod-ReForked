@@ -7,7 +7,6 @@ import me.grax.jbytemod.JarArchive;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -268,12 +267,15 @@ public final class PatternSearchDialog extends JDialog {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean hasFocus) {
             super.getListCellRendererComponent(list, value, index, isSelected, hasFocus);
-            if (value instanceof InstructionPatternMatch m) {
-                String first = m.getFormattedInstructions().lines().findFirst().orElse("instruction");
+            if (value instanceof InstructionPatternMatch) {
+                InstructionPatternMatch m = (InstructionPatternMatch) value;
+                String formatted = m.getFormattedInstructions();
+                int nl = formatted.indexOf('\n');
+                String first = nl >= 0 ? formatted.substring(0, nl) : formatted;
                 String extra = m.getInstructions().size() > 1 ? "  +" + (m.getInstructions().size() - 1) + " more" : "";
                 setText("<html><b>" + escHtml(first) + "</b>" + escHtml(extra)
                         + "&nbsp;&nbsp;<font color='#888888'>" + escHtml(m.getMethodDisplayName()) + "</font></html>");
-                setToolTipText("<html><pre>" + escHtml(m.getFormattedInstructions()) + "</pre></html>");
+                setToolTipText("<html><pre>" + escHtml(formatted) + "</pre></html>");
             }
             return this;
         }

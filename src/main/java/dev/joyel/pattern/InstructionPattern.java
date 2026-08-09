@@ -10,33 +10,45 @@ public final class InstructionPattern {
     InstructionPattern(String source, boolean includeMetadata, List<Element> elements) {
         this.source = source;
         this.includeMetadata = includeMetadata;
-        this.elements = List.copyOf(elements);
+        this.elements = elements;
     }
 
-    public String source() {
-        return source;
-    }
-
-    public boolean includeMetadata() {
-        return includeMetadata;
-    }
+    public String source() { return source; }
+    public boolean includeMetadata() { return includeMetadata; }
 
     public int instructionPatternCount() {
-        return (int) elements.stream().filter(e -> !(e instanceof Gap)).count();
+        int count = 0;
+        for (Element e : elements) {
+            if (!(e instanceof Gap)) count++;
+        }
+        return count;
     }
 
-    public sealed interface Element permits Gap, AnyInstruction, InstructionLine {
+    public interface Element {}
+
+    public static final class Gap implements Element {
+        public static final Gap INSTANCE = new Gap();
+        private Gap() {}
     }
 
-    public enum Gap implements Element {
-        INSTANCE
+    public static final class AnyInstruction implements Element {
+        public static final AnyInstruction INSTANCE = new AnyInstruction();
+        private AnyInstruction() {}
     }
 
-    public enum AnyInstruction implements Element {
-        INSTANCE
-    }
+    public static final class InstructionLine implements Element {
+        private final int sourceLine;
+        private final String opcode;
+        private final List<InstructionPatternCompiler.OperandMatcher> operands;
 
-    public record InstructionLine(int sourceLine, String opcode,
-                                  List<InstructionPatternCompiler.OperandMatcher> operands) implements Element {
+        public InstructionLine(int sourceLine, String opcode, List<InstructionPatternCompiler.OperandMatcher> operands) {
+            this.sourceLine = sourceLine;
+            this.opcode = opcode;
+            this.operands = operands;
+        }
+
+        public int sourceLine() { return sourceLine; }
+        public String opcode() { return opcode; }
+        public List<InstructionPatternCompiler.OperandMatcher> operands() { return operands; }
     }
 }
