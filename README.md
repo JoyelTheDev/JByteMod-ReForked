@@ -2,7 +2,7 @@
 
 A Java bytecode editor and analyzer with a GUI for loading, editing, and saving `.jar`, `.class`, and `.apk` files.
 
-Current version: **2.9.1** — requires JDK 21.
+Current version: **2.9.2** — requires JDK 21.
 
 ---
 
