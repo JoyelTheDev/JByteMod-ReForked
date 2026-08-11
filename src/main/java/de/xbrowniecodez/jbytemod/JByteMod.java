@@ -85,6 +85,12 @@ public class JByteMod extends JFrame {
 
         setBounds(100, 100, 1280, 720);
         setTitle(title);
+        try {
+            java.net.URL iconUrl = getClass().getClassLoader().getResource("resources/logo.png");
+            if (iconUrl != null) {
+                setIconImage(javax.imageio.ImageIO.read(iconUrl));
+            }
+        } catch (Exception ignored) {}
         setJMenuBar(myMenuBar = new MyMenuBar(this, agent));
         jarTree = new ClassTree(this);
         JPanel contentPane = new JPanel();

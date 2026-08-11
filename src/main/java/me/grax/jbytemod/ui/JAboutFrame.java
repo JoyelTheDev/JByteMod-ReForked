@@ -18,10 +18,21 @@ public class JAboutFrame extends JDialog {
     private void initializeUI(JByteMod jbm) {
         setTitle(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("about") + " " + jbm.getTitle());
         setModal(true);
-        setBounds(100, 100, 450, 300);
-        JPanel contentPanel = new JPanel(new BorderLayout());
+        setBounds(100, 100, 450, 340);
+        JPanel contentPanel = new JPanel(new BorderLayout(0, 8));
         contentPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
         setResizable(false);
+        try {
+            java.net.URL iconUrl = getClass().getClassLoader().getResource("resources/logo.png");
+            if (iconUrl != null) {
+                java.awt.image.BufferedImage raw = javax.imageio.ImageIO.read(iconUrl);
+                setIconImage(raw);
+                Image scaled = raw.getScaledInstance(64, 64, Image.SCALE_SMOOTH);
+                JLabel logoLabel = new JLabel(new ImageIcon(scaled));
+                logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                contentPanel.add(logoLabel, BorderLayout.PAGE_START);
+            }
+        } catch (Exception ignored) {}
 
         JButton closeButton = new JButton(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("close"));
         closeButton.addActionListener(e -> dispose());
@@ -40,8 +51,8 @@ public class JAboutFrame extends JDialog {
                         "<br/>Copyright \u00A9 2016-2018 noverify<br/><br/>" +
                         "Copyright \u00A9 2019 Panda<br/><br/>" +
                         "Copyright \u00A9 2020-" + currentYear + " xBrownieCodez<br/><br/>" +
-                        "JByteMod by noverify, Reborn by Panda, Remastered by xBrownieCodez" +
-                        "<br/><font color=\"#0000EE\"><u>https://github.com/xBrownieCodezV2/JByteMod-Remastered</u></font>"
+                        "JByteMod by noverify, Reborn by Panda, Remastered by xBrownieCodez and JoyelTheDev (2026)" +
+                        "<br/><font color=\"#0000EE\"><u>https://github.com/JoyelTheDev/JByteMod-ReForked</u></font>"
         ));
         titlePane.setEditable(false);
 
