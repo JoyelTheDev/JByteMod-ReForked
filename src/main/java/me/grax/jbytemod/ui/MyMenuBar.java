@@ -566,7 +566,7 @@ public class MyMenuBar extends JMenuBar {
         debugMenu.add(jdwpDisconnect);
         this.add(debugMenu);
 
-        JMenu xrefMenu = new JMenu("Xref");
+        JMenu xrefMenu = new JMenu("Xreference");
         JMenuItem xrefStats = new JMenuItem("Xref Statistics...");
         xrefStats.setAccelerator(KeyStroke.getKeyStroke('X', Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         xrefStats.addActionListener(new ActionListener() {
