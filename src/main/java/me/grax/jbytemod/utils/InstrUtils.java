@@ -1,7 +1,7 @@
 package me.grax.jbytemod.utils;
 
 import de.xbrowniecodez.jbytemod.Main;
-
+import dev.joyel.theme.JBytePalette;
 import me.grax.jbytemod.res.Option;
 import me.lpk.util.OpUtils;
 import org.objectweb.asm.Handle;
@@ -11,6 +11,14 @@ public class InstrUtils {
 
     public static Option primColor = Main.INSTANCE.getJByteMod().getOptions().get("primary_color");
     public static Option secColor = Main.INSTANCE.getJByteMod().getOptions().get("secondary_color");
+
+    private static String prim() {
+        return JBytePalette.hex("code.primary");
+    }
+
+    private static String sec() {
+        return JBytePalette.hex("code.secondary");
+    }
 
     public static String toString(AbstractInsnNode ain) {
         String opc = TextUtils.toBold(OpUtils.getOpcodeText(ain.getOpcode()).toLowerCase()) + " ";
@@ -43,7 +51,7 @@ public class InstrUtils {
                 TypeInsnNode tin = (TypeInsnNode) ain;
                 String esc = TextUtils.escape(tin.desc);
                 if (esc.endsWith(";") && esc.startsWith("L")) {
-                    opc += TextUtils.addTag(esc, "font color=" + primColor.getString());
+                    opc += TextUtils.addTag(esc, "font color=" + prim());
                 } else {
                     opc += getDisplayClass(esc);
                 }
@@ -58,9 +66,9 @@ public class InstrUtils {
                 break;
             case AbstractInsnNode.LDC_INSN:
                 LdcInsnNode ldc = (LdcInsnNode) ain;
-                opc += TextUtils.addTag(ldc.cst.getClass().getSimpleName(), "font color=" + primColor.getString()) + " ";
+                opc += TextUtils.addTag(ldc.cst.getClass().getSimpleName(), "font color=" + prim()) + " ";
                 if (ldc.cst instanceof String)
-                    opc += TextUtils.addTag("\"" + TextUtils.escape(ldc.cst.toString()) + "\"", "font color=#559955");
+                    opc += TextUtils.addTag("\"" + TextUtils.escape(ldc.cst.toString()) + "\"", "font color=" + JBytePalette.hex("syntax.string"));
                 else {
                     opc += ldc.cst.toString();
                 }
@@ -79,14 +87,14 @@ public class InstrUtils {
             case AbstractInsnNode.TABLESWITCH_INSN:
                 TableSwitchInsnNode tsin = (TableSwitchInsnNode) ain;
                 if (tsin.dflt != null) {
-                    opc += TextUtils.addTag("L" + OpUtils.getLabelIndex(tsin.dflt), "font color=" + secColor.getString());
+                    opc += TextUtils.addTag("L" + OpUtils.getLabelIndex(tsin.dflt), "font color=" + sec());
                 }
                 if (tsin.labels.size() < 20) {
                     for (LabelNode l : tsin.labels) {
-                        opc += " " + TextUtils.addTag("L" + OpUtils.getLabelIndex(l), "font color=" + primColor.getString());
+                        opc += " " + TextUtils.addTag("L" + OpUtils.getLabelIndex(l), "font color=" + prim());
                     }
                 } else {
-                    opc += " " + TextUtils.addTag(tsin.labels.size() + " cases", "font color=" + primColor.getString());
+                    opc += " " + TextUtils.addTag(tsin.labels.size() + " cases", "font color=" + prim());
                 }
                 break;
             case AbstractInsnNode.INVOKE_DYNAMIC_INSN:
@@ -98,10 +106,9 @@ public class InstrUtils {
                         Handle h = (Handle) o;
                         opc += getDisplayType(h.getDesc().split("\\)")[1], true) + " " + getDisplayClassRed(TextUtils.escape(h.getOwner())) + "."
                                 + TextUtils.escape(h.getName()) + "(" + getDisplayArgs(TextUtils.escape(h.getDesc())) + ")";
-
                     }
                 } else {
-                    opc += TextUtils.addTag(TextUtils.escape(idin.name), "font color=" + primColor.getString()) + " " + TextUtils.escape(idin.desc);
+                    opc += TextUtils.addTag(TextUtils.escape(idin.name), "font color=" + prim()) + " " + TextUtils.escape(idin.desc);
                 }
                 break;
         }
@@ -111,17 +118,17 @@ public class InstrUtils {
     public static String getDisplayClass(String str) {
         String[] spl = str.split("/");
         if (spl.length > 1) {
-            return TextUtils.addTag(spl[spl.length - 1], "font color=" + primColor.getString());
+            return TextUtils.addTag(spl[spl.length - 1], "font color=" + prim());
         }
-        return TextUtils.addTag(str, "font color=" + primColor.getString());
+        return TextUtils.addTag(str, "font color=" + prim());
     }
 
     public static String getDisplayClassRed(String str) {
         String[] spl = str.split("/");
         if (spl.length > 1) {
-            return TextUtils.addTag(spl[spl.length - 1], "font color=" + secColor.getString());
+            return TextUtils.addTag(spl[spl.length - 1], "font color=" + sec());
         }
-        return TextUtils.addTag(str, "font color=" + secColor.getString());
+        return TextUtils.addTag(str, "font color=" + sec());
     }
 
     public static String getDisplayArgs(String rawType) {
@@ -150,77 +157,42 @@ public class InstrUtils {
             } else if (chr == 'L') {
                 isFullyQualifiedClass = true;
             } else {
-                if (chr == 'Z') {
-                    result += "boolean";
-                } else if (chr == 'B') {
-                    result += "byte";
-                } else if (chr == 'C') {
-                    result += "char";
-                } else if (chr == 'S') {
-                    result += "short";
-                } else if (chr == 'I') {
-                    result += "int";
-                } else if (chr == 'J') {
-                    result += "long";
-                } else if (chr == 'F') {
-                    result += "float";
-                } else if (chr == 'D') {
-                    result += "double";
-                } else if (chr == 'V') {
-                    result += "void";
-                } else {
-                    isFullyQualifiedClass = true;
-                    continue;
-                }
-
+                if (chr == 'Z') result += "boolean";
+                else if (chr == 'B') result += "byte";
+                else if (chr == 'C') result += "char";
+                else if (chr == 'S') result += "short";
+                else if (chr == 'I') result += "int";
+                else if (chr == 'J') result += "long";
+                else if (chr == 'F') result += "float";
+                else if (chr == 'D') result += "double";
+                else if (chr == 'V') result += "void";
+                else { isFullyQualifiedClass = true; continue; }
                 result += argSuffix;
                 argSuffix = "";
                 result += ", ";
             }
         }
-
         if (tmpArg.length() != 0) {
             String[] spl = tmpArg.split("/");
             result += spl[spl.length - 1] + argSuffix + ", ";
         }
-
         if (result.length() >= 2) {
             result = result.substring(0, result.length() - 2);
         }
         if (tag)
-            return TextUtils.addTag(result, "font color=" + primColor.getString());
+            return TextUtils.addTag(result, "font color=" + prim());
         return result;
     }
 
     public final static String getDisplayAccess(int var1) {
         String var2 = "";
-        if ((var1 & 1) != 0) {
-            var2 = var2 + "public ";
-        }
-
-        if ((var1 & 2) != 0) {
-            var2 = var2 + "private ";
-        }
-
-        if ((var1 & 4) != 0) {
-            var2 = var2 + "protected ";
-        }
-
-        if ((var1 & 8) != 0) {
-            var2 = var2 + "static ";
-        }
-
-        if ((var1 & 16) != 0) {
-            var2 = var2 + "final ";
-        }
-
-        if ((var1 & 1024) != 0) {
-            var2 = var2 + "abstract ";
-        }
-        if (var2.length() > 0) {
-            var2 = var2.substring(0, var2.length() - 1);
-        }
-
+        if ((var1 & 1) != 0) var2 = var2 + "public ";
+        if ((var1 & 2) != 0) var2 = var2 + "private ";
+        if ((var1 & 4) != 0) var2 = var2 + "protected ";
+        if ((var1 & 8) != 0) var2 = var2 + "static ";
+        if ((var1 & 16) != 0) var2 = var2 + "final ";
+        if ((var1 & 1024) != 0) var2 = var2 + "abstract ";
+        if (var2.length() > 0) var2 = var2.substring(0, var2.length() - 1);
         return var2;
     }
 
@@ -290,7 +262,7 @@ public class InstrUtils {
                 }
                 if (tsin.labels.size() < 20) {
                     for (LabelNode l : tsin.labels) {
-                        opc += " " + "L" + OpUtils.getLabelIndex(l);
+                        opc += " L" + OpUtils.getLabelIndex(l);
                     }
                 } else {
                     opc += " " + tsin.labels.size() + " cases";
@@ -306,9 +278,7 @@ public class InstrUtils {
 
     public static String getDisplayClassEasy(String str) {
         String[] spl = str.split("/");
-        if (spl.length > 1) {
-            return spl[spl.length - 1];
-        }
+        if (spl.length > 1) return spl[spl.length - 1];
         return str;
     }
 

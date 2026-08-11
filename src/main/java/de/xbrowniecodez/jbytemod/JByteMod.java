@@ -1,6 +1,7 @@
 package de.xbrowniecodez.jbytemod;
 
 import com.sun.tools.attach.VirtualMachine;
+import dev.joyel.theme.ThemeManager;
 import de.xbrowniecodez.jbytemod.utils.BytecodeUtils;
 import de.xbrowniecodez.jbytemod.utils.Utils;
 import de.xbrowniecodez.jbytemod.utils.update.objects.Version;
@@ -287,7 +288,29 @@ public class JByteMod extends JFrame {
         this.initializeFrame(false);
         this.setPluginManager(new PluginManager(this));
         this.myMenuBar.addPluginMenu(pluginManager.getPlugins());
+        restoreSavedTheme();
         super.setVisible(b);
+    }
+
+    private void restoreSavedTheme() {
+        java.io.File prefsFile = new java.io.File(
+                System.getProperty("user.home"), ".jbytemod" + java.io.File.separator + "theme.prefs");
+        if (!prefsFile.exists()) {
+            ThemeManager.getInstance().applyTheme(ThemeManager.getInstance().getThemes().get(0));
+            return;
+        }
+        try {
+            java.io.FileInputStream fis = new java.io.FileInputStream(prefsFile);
+            byte[] bytes = new byte[(int) prefsFile.length()];
+            fis.read(bytes);
+            fis.close();
+            String content = new String(bytes, java.nio.charset.StandardCharsets.UTF_8).trim();
+            if (content.startsWith("active_theme=")) {
+                ThemeManager.getInstance().loadActiveThemeByName(content.substring("active_theme=".length()));
+            }
+        } catch (java.io.IOException ignored) {
+            ThemeManager.getInstance().applyTheme(ThemeManager.getInstance().getThemes().get(0));
+        }
     }
 
     public void treeSelection(ClassNode cn, MethodNode mn) {
