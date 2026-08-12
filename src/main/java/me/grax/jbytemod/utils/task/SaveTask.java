@@ -83,7 +83,7 @@ public class SaveTask extends SwingWorker<Void, Integer> {
             out.setEncoding("UTF-8");
             for (String entry : outBytes.keySet()) {
                 out.putNextEntry(new ZipEntry(entry));
-                if (!entry.endsWith("/") || !entry.endsWith("\\"))
+                if (!entry.endsWith("/") && !entry.endsWith("\\"))
                     out.write(outBytes.get(entry));
                 out.closeEntry();
             }
