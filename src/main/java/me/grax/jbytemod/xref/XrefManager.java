@@ -7,21 +7,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public final class XrefManager {
-
-    private static XrefManager instance;
+public enum XrefManager {
+    INSTANCE;
 
     private volatile XrefMap currentMap;
     private final AtomicBoolean building = new AtomicBoolean(false);
 
-    private XrefManager() {
-    }
-
     public static XrefManager getInstance() {
-        if (instance == null) {
-            instance = new XrefManager();
-        }
-        return instance;
+        return INSTANCE;
     }
 
     public void buildAsync(JarArchive archive, Runnable onComplete) {
