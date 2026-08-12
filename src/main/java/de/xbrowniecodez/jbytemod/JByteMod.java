@@ -37,7 +37,10 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.lang.instrument.Instrumentation;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -165,7 +168,6 @@ public class JByteMod extends JFrame {
             new ErrorDisplay(e);
         }
     }
-
 
     private void loadZipFile(File input) {
         jarArchive = new JarArchive(this, input);
@@ -299,32 +301,32 @@ public class JByteMod extends JFrame {
     }
 
     private void restoreSavedTheme() {
-        java.io.File prefsFile = new java.io.File(
-                System.getProperty("user.home"), ".jbytemod" + java.io.File.separator + "theme.prefs");
+        File prefsFile = new File(
+                System.getProperty("user.home"), ".jbytemod" + File.separator + "theme.prefs");
         if (!prefsFile.exists()) {
             ThemeManager.getInstance().applyTheme(ThemeManager.getInstance().getThemes().get(0));
             return;
         }
         try {
-            java.io.FileInputStream fis = new java.io.FileInputStream(prefsFile);
-            byte[] bytes = new byte[(int) prefsFile.length()];
-            fis.read(bytes);
-            fis.close();
-            String content = new String(bytes, java.nio.charset.StandardCharsets.UTF_8).trim();
+            byte[] bytes;
+            try (FileInputStream fis = new FileInputStream(prefsFile)) {
+                bytes = new byte[(int) prefsFile.length()];
+                fis.read(bytes);
+            }
+            String content = new String(bytes, StandardCharsets.UTF_8).trim();
             if (content.startsWith("active_theme=")) {
                 ThemeManager.getInstance().loadActiveThemeByName(content.substring("active_theme=".length()));
             }
-        } catch (java.io.IOException ignored) {
+        } catch (IOException ignored) {
             ThemeManager.getInstance().applyTheme(ThemeManager.getInstance().getThemes().get(0));
         }
     }
 
     public void treeSelection(ClassNode cn, MethodNode mn) {
-        //selection may take some time
         new Thread(() -> {
             DefaultTreeModel tm = (DefaultTreeModel) jarTree.getModel();
             if (this.selectEntry(mn, tm, (SortedTreeNode) tm.getRoot())) {
-                jarTree.repaint();
+                SwingUtilities.invokeLater(() -> jarTree.repaint());
             }
         }).start();
     }
