@@ -6,7 +6,6 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import javax.swing.tree.DefaultMutableTreeNode;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Vector;
 
@@ -60,25 +59,16 @@ public class SortedTreeNode extends DefaultMutableTreeNode {
         return (o1, o2) -> {
             boolean leaf1 = o1.toString().endsWith(".class");
             boolean leaf2 = o2.toString().endsWith(".class");
-
-            if (leaf1 && !leaf2) {
-                return 1;
-            }
-            if (!leaf1 && leaf2) {
-                return -1;
-            }
+            if (leaf1 && !leaf2) return 1;
+            if (!leaf1 && leaf2) return -1;
             return o1.toString().compareTo(o2.toString());
         };
     }
 
     @Override
     public String toString() {
-        if (methodNode != null) {
-            return methodNode.name;
-        }
-        if (classNode != null) {
-            return className;
-        }
+        if (methodNode != null) return methodNode.name;
+        if (classNode != null)  return className;
         if (resourcePath != null) {
             int slash = resourcePath.lastIndexOf('/');
             return slash >= 0 ? resourcePath.substring(slash + 1) : resourcePath;
