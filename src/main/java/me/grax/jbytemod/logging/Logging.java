@@ -5,6 +5,7 @@ import de.xbrowniecodez.jbytemod.ui.NotificationManager;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
+import javax.swing.SwingUtilities;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -13,6 +14,7 @@ public class Logging extends PrintStream {
 
     private static final SimpleDateFormat format = new SimpleDateFormat("HH:mm:ss");
     private GuiLogging gl;
+
     public Logging() {
         super(new ByteArrayOutputStream(), true);
     }
@@ -61,7 +63,7 @@ public class Logging extends PrintStream {
 
     private static class GuiLogging extends Thread {
 
-        private String text;
+        private final String text;
 
         public GuiLogging(String text) {
             this.text = text;
@@ -71,12 +73,13 @@ public class Logging extends PrintStream {
         public void run() {
             JByteMod inst = Main.INSTANCE.getJByteMod();
             if (inst != null && inst.getPageEndPanel() != null) {
-                inst.getPageEndPanel().setTip(text);
+                SwingUtilities.invokeLater(() -> inst.getPageEndPanel().setTip(text));
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
+                    return;
                 }
-                inst.getPageEndPanel().setTip(null);
+                SwingUtilities.invokeLater(() -> inst.getPageEndPanel().setTip(null));
             }
         }
     }
