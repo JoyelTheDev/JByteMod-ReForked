@@ -17,6 +17,7 @@ public class SortedTreeNode extends DefaultMutableTreeNode {
     private ClassNode classNode;
     private MethodNode methodNode;
     private String className;
+    private String resourcePath;
 
     public SortedTreeNode(ClassNode classNode, MethodNode methodNode) {
         this.classNode = classNode;
@@ -31,6 +32,16 @@ public class SortedTreeNode extends DefaultMutableTreeNode {
 
     public SortedTreeNode(Object userObject) {
         super(userObject);
+    }
+
+    public SortedTreeNode(String resourcePath, boolean isResource) {
+        this.resourcePath = resourcePath;
+        int slash = resourcePath.lastIndexOf('/');
+        setUserObject(slash >= 0 ? resourcePath.substring(slash + 1) : resourcePath);
+    }
+
+    public boolean isResource() {
+        return resourcePath != null;
     }
 
     private void setClassName() {
@@ -67,6 +78,10 @@ public class SortedTreeNode extends DefaultMutableTreeNode {
         }
         if (classNode != null) {
             return className;
+        }
+        if (resourcePath != null) {
+            int slash = resourcePath.lastIndexOf('/');
+            return slash >= 0 ? resourcePath.substring(slash + 1) : resourcePath;
         }
         return userObject != null ? userObject.toString() : "";
     }

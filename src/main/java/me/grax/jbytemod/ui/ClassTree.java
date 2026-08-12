@@ -18,7 +18,12 @@ import org.objectweb.asm.tree.MethodNode;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.SwingUtilities;
 import javax.swing.tree.*;
+import dev.joyel.hex.HexEditorDialog;
+import dev.joyel.hex.ResourceEntry;
+
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -28,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ClassTree extends JTree implements IDropUser {
 
@@ -103,6 +109,31 @@ public class ClassTree extends JTree implements IDropUser {
                     clazz.add(new SortedTreeNode(c, m));
                 }
             }
+        if (jar.getOutput() != null && !jar.getOutput().isEmpty()) {
+            SortedTreeNode resourcesRoot = new SortedTreeNode("[Resources]");
+            HashMap<String, SortedTreeNode> resDirs = new HashMap<String, SortedTreeNode>();
+            for (Map.Entry<String, byte[]> resEntry : jar.getOutput().entrySet()) {
+                String path = resEntry.getKey();
+                String[] parts = path.split("/");
+                SortedTreeNode parent = resourcesRoot;
+                String accumulated = "";
+                for (int i = 0; i < parts.length - 1; i++) {
+                    accumulated = accumulated.isEmpty() ? parts[i] : accumulated + "/" + parts[i];
+                    if (!resDirs.containsKey(accumulated)) {
+                        SortedTreeNode dir = new SortedTreeNode(parts[i]);
+                        parent.add(dir);
+                        resDirs.put(accumulated, dir);
+                        parent = dir;
+                    } else {
+                        parent = resDirs.get(accumulated);
+                    }
+                }
+                SortedTreeNode resNode = new SortedTreeNode(path, true);
+                parent.add(resNode);
+            }
+            root.add(resourcesRoot);
+        }
+
         boolean sort = Main.INSTANCE.getJByteMod().getOptions().get("sort_methods").getBoolean();
         sort(tm, root, sort);
         tm.reload();
@@ -175,7 +206,51 @@ public class ClassTree extends JTree implements IDropUser {
                         MethodNode mn = stn.getMethodNode();
                         ClassNode cn = stn.getClassNode();
 
-                        if (mn != null) {
+                        if (stn.isResource()) {
+                            String resPath = stn.getResourcePath();
+                            byte[] resData = jbm.getJarArchive().getOutput().get(resPath);
+                            if (resData == null) resData = new byte[0];
+                            ResourceEntry resEntry = new ResourceEntry(resPath, resData);
+
+                            JPopupMenu menu = new JPopupMenu();
+
+                            JMenuItem openHex = new JMenuItem("Open in Hex Editor");
+                            final ResourceEntry finalEntry = resEntry;
+                            openHex.addActionListener(new ActionListener() {
+                                public void actionPerformed(ActionEvent e) {
+                                    Frame frame = (Frame) SwingUtilities.getWindowAncestor(ClassTree.this);
+                                    HexEditorDialog dlg = new HexEditorDialog(frame, finalEntry, jbm.getJarArchive());
+                                    dlg.setVisible(true);
+                                }
+                            });
+                            menu.add(openHex);
+
+                            JMenuItem removeRes = new JMenuItem("Remove Resource");
+                            removeRes.addActionListener(new ActionListener() {
+                                public void actionPerformed(ActionEvent e) {
+                                    if (JOptionPane.showConfirmDialog(jbm,
+                                            "Remove resource \"" + resPath + "\" from JAR?",
+                                            "Confirm Remove", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                                        jbm.getJarArchive().getOutput().remove(resPath);
+                                        model.removeNodeFromParent(stn);
+                                    }
+                                }
+                            });
+                            menu.add(removeRes);
+
+                            JMenuItem exportRes = new JMenuItem("Export to File...");
+                            exportRes.addActionListener(new ActionListener() {
+                                public void actionPerformed(ActionEvent e) {
+                                    Frame frame = (Frame) SwingUtilities.getWindowAncestor(ClassTree.this);
+                                    HexEditorDialog dlg = new HexEditorDialog(frame, finalEntry, jbm.getJarArchive());
+                                    dlg.setVisible(true);
+                                }
+                            });
+                            menu.add(exportRes);
+
+                            menu.show(ClassTree.this, me.getX(), me.getY());
+
+                        } else if (mn != null) {
                             //method selected
                             JPopupMenu menu = new JPopupMenu();
                             JMenuItem edit = new JMenuItem(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("edit"));
