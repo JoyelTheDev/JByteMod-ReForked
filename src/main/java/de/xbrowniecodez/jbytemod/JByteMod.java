@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import de.xbrowniecodez.jbytemod.plugin.Plugin;
 import de.xbrowniecodez.jbytemod.plugin.PluginManager;
+import dev.joyel.hierarchy.HierarchyManager;
 import me.grax.jbytemod.xref.XrefManager;
 import me.grax.jbytemod.JarArchive;
 import me.grax.jbytemod.res.LanguageRes;
@@ -190,6 +191,9 @@ public class JByteMod extends JFrame {
                         " member refs, " +
                         XrefManager.getInstance().getCurrentMap().getAllClassRefs().size() +
                         " class refs)."));
+        Main.INSTANCE.getLogger().log("Building Hierarchy index...");
+        HierarchyManager.getInstance().buildAsync(jarArchive, () ->
+                Main.INSTANCE.getLogger().log("Hierarchy index built."));
     }
 
     private void displayJarWarning() {
