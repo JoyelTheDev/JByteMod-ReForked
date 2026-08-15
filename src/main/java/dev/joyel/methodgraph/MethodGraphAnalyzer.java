@@ -2,7 +2,6 @@ package dev.joyel.methodgraph;
 
 import me.grax.jbytemod.JarArchive;
 import org.objectweb.asm.Handle;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 import java.util.*;
@@ -15,12 +14,13 @@ public final class MethodGraphAnalyzer {
 
     private static final float METHOD_WIDTH_MIN = 210f;
     private static final float METHOD_WIDTH_MAX = 520f;
-    private static final float METHOD_HEIGHT   = 60f;
-    private static final float METHOD_GAP_X    = 200f;
-    private static final float METHOD_GAP_Y    = 90f;
+    private static final float METHOD_HEIGHT    = 60f;
+    private static final float METHOD_GAP_X     = 200f;
+    private static final float METHOD_GAP_Y     = 90f;
 
     private final JarArchive archive;
-    private Map<MethodKey, List<Link>> reverseCache;
+    private Map<MethodGraph.MethodKey, List<Link>> reverseCache;
+    private final Map<MethodGraph.MethodKey, List<Link>> outgoingCache = new HashMap<>();
 
     public MethodGraphAnalyzer(JarArchive archive) {
         this.archive = Objects.requireNonNull(archive);
@@ -48,7 +48,7 @@ public final class MethodGraphAnalyzer {
                 }
             }
             if (request.direction() != MethodGraph.Direction.CALLS) {
-                for (Link link : reverseLinks(cancelled).getOrDefault(current, List.of())) {
+                for (Link link : reverseLinks(cancelled).getOrDefault(current, Collections.<Link>emptyList())) {
                     discover(discovered, queue, link.sourceOwner(), link.sourceNode(),
                             link.sourceKey(), d.depth() + 1, d.rank() - 1);
                 }
@@ -62,8 +62,10 @@ public final class MethodGraphAnalyzer {
             if (d.asmNode() == null) continue;
             for (Link link : outgoing(d.owner(), d.asmNode(), request.includeExternal())) {
                 if (!discovered.containsKey(link.targetKey())) continue;
-                edges.computeIfAbsent(new EdgeKey(entry.getKey(), link.targetKey()),
-                        ignored -> new MutableEdge()).add(link.dynamic());
+                EdgeKey ek = new EdgeKey(entry.getKey(), link.targetKey());
+                MutableEdge me = edges.get(ek);
+                if (me == null) { me = new MutableEdge(); edges.put(ek, me); }
+                me.add(link.dynamic());
             }
         }
 
@@ -76,11 +78,15 @@ public final class MethodGraphAnalyzer {
         }
 
         Map<MethodGraph.MethodKey, MethodGraph.MethodNode> nodes = layout(rootKey, drafts);
-        List<MethodGraph.CallEdge> calls = edges.entrySet().stream()
-                .map(e -> new MethodGraph.CallEdge(e.getKey().caller(), e.getKey().callee(),
-                        e.getValue().count, e.getValue().dynamic))
-                .sorted(Comparator.comparing(c -> c.caller().symbol()))
-                .toList();
+
+        List<MethodGraph.CallEdge> calls = new ArrayList<>();
+        for (Map.Entry<EdgeKey, MutableEdge> entry : edges.entrySet()) {
+            calls.add(new MethodGraph.CallEdge(
+                    entry.getKey().caller(), entry.getKey().callee(),
+                    entry.getValue().count, entry.getValue().dynamic));
+        }
+        calls.sort(Comparator.comparing(c -> c.caller().symbol()));
+
         return new MethodGraph(rootKey, nodes, calls, bounds(nodes));
     }
 
@@ -94,29 +100,41 @@ public final class MethodGraphAnalyzer {
         queue.addLast(key);
     }
 
-    private final Map<MethodGraph.MethodKey, List<Link>> outgoingCache = new HashMap<>();
-
     private List<Link> outgoing(String owner, MethodNode method, boolean includeExternal) {
         MethodGraph.MethodKey k = new MethodGraph.MethodKey(owner, method.name, method.desc);
-        List<Link> all = outgoingCache.computeIfAbsent(k, ignored -> scanOutgoing(owner, method));
-        return includeExternal ? all : all.stream().filter(l -> l.targetNode() != null).toList();
+        List<Link> all = outgoingCache.get(k);
+        if (all == null) {
+            all = scanOutgoing(owner, method);
+            outgoingCache.put(k, all);
+        }
+        if (includeExternal) return all;
+        List<Link> filtered = new ArrayList<>();
+        for (Link l : all) { if (l.targetNode() != null) filtered.add(l); }
+        return filtered;
     }
 
     private List<Link> scanOutgoing(String callerOwner, MethodNode method) {
         Map<MethodGraph.MethodKey, MutableLink> links = new LinkedHashMap<>();
-        if (method.instructions == null) return List.of();
+        if (method.instructions == null) return Collections.emptyList();
         for (AbstractInsnNode insn : method.instructions) {
-            if (insn instanceof MethodInsnNode m) {
+            if (insn instanceof MethodInsnNode) {
+                MethodInsnNode m = (MethodInsnNode) insn;
                 addMethodLink(m.owner, m.name, m.desc, false, links);
-            } else if (insn instanceof InvokeDynamicInsnNode dyn) {
+            } else if (insn instanceof InvokeDynamicInsnNode) {
+                InvokeDynamicInsnNode dyn = (InvokeDynamicInsnNode) insn;
                 for (Object arg : dyn.bsmArgs) {
-                    if (arg instanceof Handle h && h.getDesc().startsWith("(")) {
-                        addMethodLink(h.getOwner(), h.getName(), h.getDesc(), true, links);
+                    if (arg instanceof Handle) {
+                        Handle h = (Handle) arg;
+                        if (h.getDesc().startsWith("(")) {
+                            addMethodLink(h.getOwner(), h.getName(), h.getDesc(), true, links);
+                        }
                     }
                 }
             }
         }
-        return links.values().stream().map(MutableLink::freeze).toList();
+        List<Link> result = new ArrayList<>();
+        for (MutableLink ml : links.values()) result.add(ml.freeze());
+        return result;
     }
 
     private void addMethodLink(String owner, String name, String desc, boolean dynamic,
@@ -124,8 +142,12 @@ public final class MethodGraphAnalyzer {
         MethodGraph.MethodKey key = new MethodGraph.MethodKey(owner, name, desc);
         MethodNode resolved = resolveMethod(owner, name, desc);
         String resolvedOwner = resolved != null ? findOwner(name, desc) : owner;
-        links.computeIfAbsent(key, ignored -> new MutableLink(resolvedOwner, resolved, key))
-                .add(dynamic);
+        MutableLink ml = links.get(key);
+        if (ml == null) {
+            ml = new MutableLink(resolvedOwner, resolved, key);
+            links.put(key, ml);
+        }
+        ml.add(dynamic);
     }
 
     private MethodNode resolveMethod(String owner, String name, String desc) {
@@ -155,19 +177,19 @@ public final class MethodGraphAnalyzer {
             this.reverseCache = reverse;
             return reverse;
         }
-        for (ClassNode cn : List.copyOf(archive.getClasses().values())) {
+        for (ClassNode cn : new ArrayList<>(archive.getClasses().values())) {
             checkCancelled(cancelled);
-            for (MethodNode mn : List.copyOf(cn.methods)) {
+            for (MethodNode mn : new ArrayList<>(cn.methods)) {
                 MethodGraph.MethodKey callerKey = new MethodGraph.MethodKey(cn.name, mn.name, mn.desc);
                 for (Link out : outgoing(cn.name, mn, true)) {
-                    reverse.computeIfAbsent(out.targetKey(), ignored -> new ArrayList<>())
-                            .add(new Link(cn.name, mn, callerKey, out.targetOwner(),
-                                    out.targetNode(), out.targetKey(), out.dynamic()));
+                    List<Link> list = reverse.get(out.targetKey());
+                    if (list == null) { list = new ArrayList<>(); reverse.put(out.targetKey(), list); }
+                    list.add(new Link(cn.name, mn, callerKey,
+                            out.targetOwner(), out.targetNode(), out.targetKey(), out.dynamic()));
                 }
             }
         }
-        reverse.replaceAll((k, v) -> List.copyOf(v));
-        this.reverseCache = Map.copyOf(reverse);
+        this.reverseCache = reverse;
         return this.reverseCache;
     }
 
@@ -175,36 +197,52 @@ public final class MethodGraphAnalyzer {
             MethodGraph.MethodKey root, Map<MethodGraph.MethodKey, NodeDraft> drafts) {
 
         Map<Integer, List<NodeDraft>> layers = new LinkedHashMap<>();
-        drafts.values().stream()
-                .sorted(Comparator.comparingInt((NodeDraft d) -> d.discovered().rank())
-                        .thenComparing(d -> d.key().symbol()))
-                .forEach(d -> layers.computeIfAbsent(d.discovered().rank(),
-                        ignored -> new ArrayList<>()).add(d));
+        List<NodeDraft> sorted = new ArrayList<>(drafts.values());
+        sorted.sort(new Comparator<NodeDraft>() {
+            public int compare(NodeDraft a, NodeDraft b) {
+                int r = Integer.compare(a.discovered().rank(), b.discovered().rank());
+                return r != 0 ? r : a.key().symbol().compareTo(b.key().symbol());
+            }
+        });
+        for (NodeDraft d : sorted) {
+            Integer rank = d.discovered().rank();
+            List<NodeDraft> layer = layers.get(rank);
+            if (layer == null) { layer = new ArrayList<>(); layers.put(rank, layer); }
+            layer.add(d);
+        }
 
         Map<Integer, Float> layerWidths = new HashMap<>();
-        layers.forEach((rank, layer) ->
-                layerWidths.put(rank, (float) layer.stream()
-                        .mapToDouble(NodeDraft::width).max().orElse(0)));
+        for (Map.Entry<Integer, List<NodeDraft>> entry : layers.entrySet()) {
+            float max = 0;
+            for (NodeDraft d : entry.getValue()) max = Math.max(max, d.width());
+            layerWidths.put(entry.getKey(), max);
+        }
+
+        int maxRank = 0, minRank = 0;
+        for (int r : layers.keySet()) { maxRank = Math.max(maxRank, r); minRank = Math.min(minRank, r); }
 
         Map<Integer, Float> layerX = new HashMap<>();
         layerX.put(0, 0f);
-        int maxRank = layers.keySet().stream().mapToInt(Integer::intValue).max().orElse(0);
-        int minRank = layers.keySet().stream().mapToInt(Integer::intValue).min().orElse(0);
         for (int r = 1; r <= maxRank; r++) {
-            layerX.put(r, layerX.getOrDefault(r - 1, 0f) + layerWidths.getOrDefault(r - 1, 0f) + METHOD_GAP_X);
+            float prev = layerX.containsKey(r - 1) ? layerX.get(r - 1) : 0f;
+            float prevW = layerWidths.containsKey(r - 1) ? layerWidths.get(r - 1) : 0f;
+            layerX.put(r, prev + prevW + METHOD_GAP_X);
         }
         for (int r = -1; r >= minRank; r--) {
-            layerX.put(r, layerX.getOrDefault(r + 1, 0f) - layerWidths.getOrDefault(r, 0f) - METHOD_GAP_X);
+            float next = layerX.containsKey(r + 1) ? layerX.get(r + 1) : 0f;
+            float thisW = layerWidths.containsKey(r) ? layerWidths.get(r) : 0f;
+            layerX.put(r, next - thisW - METHOD_GAP_X);
         }
 
         Map<MethodGraph.MethodKey, MethodGraph.MethodNode> nodes = new LinkedHashMap<>();
         for (Map.Entry<Integer, List<NodeDraft>> entry : layers.entrySet()) {
             List<NodeDraft> layer = entry.getValue();
-            float total = (float) layer.stream().mapToDouble(NodeDraft::height).sum()
-                    + METHOD_GAP_Y * Math.max(0, layer.size() - 1);
+            float total = 0;
+            for (NodeDraft d : layer) total += d.height();
+            total += METHOD_GAP_Y * Math.max(0, layer.size() - 1);
             float y = -total * 0.5f;
+            float x = layerX.containsKey(entry.getKey()) ? layerX.get(entry.getKey()) : 0f;
             for (NodeDraft d : layer) {
-                float x = layerX.getOrDefault(entry.getKey(), 0f);
                 nodes.put(d.key(), new MethodGraph.MethodNode(
                         d.key(), d.discovered().asmNode(),
                         d.discovered().depth(), d.discovered().rank(),
@@ -218,12 +256,15 @@ public final class MethodGraphAnalyzer {
         if (rootNode != null) {
             float off = -rootNode.y();
             Map<MethodGraph.MethodKey, MethodGraph.MethodNode> shifted = new LinkedHashMap<>();
-            nodes.forEach((k, n) -> shifted.put(k, new MethodGraph.MethodNode(
-                    n.key(), n.asmNode(), n.depth(), n.rank(), n.root(),
-                    n.x(), n.y() + off, n.width(), n.height())));
-            return Map.copyOf(shifted);
+            for (Map.Entry<MethodGraph.MethodKey, MethodGraph.MethodNode> e : nodes.entrySet()) {
+                MethodGraph.MethodNode n = e.getValue();
+                shifted.put(e.getKey(), new MethodGraph.MethodNode(
+                        n.key(), n.asmNode(), n.depth(), n.rank(), n.root(),
+                        n.x(), n.y() + off, n.width(), n.height()));
+            }
+            return shifted;
         }
-        return Map.copyOf(nodes);
+        return nodes;
     }
 
     private static MethodGraph.Bounds bounds(Map<MethodGraph.MethodKey, MethodGraph.MethodNode> nodes) {
@@ -231,8 +272,7 @@ public final class MethodGraphAnalyzer {
         float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE;
         float maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
         for (MethodGraph.MethodNode n : nodes.values()) {
-            minX = Math.min(minX, n.x());
-            minY = Math.min(minY, n.y());
+            minX = Math.min(minX, n.x()); minY = Math.min(minY, n.y());
             maxX = Math.max(maxX, n.x() + n.width());
             maxY = Math.max(maxY, n.y() + n.height());
         }
@@ -251,26 +291,110 @@ public final class MethodGraphAnalyzer {
         }
     }
 
-    public record Request(int depth, MethodGraph.Direction direction, boolean includeExternal) {
-        public Request {
+    public static final class Request {
+        private final int depth;
+        private final MethodGraph.Direction direction;
+        private final boolean includeExternal;
+
+        public Request(int depth, MethodGraph.Direction direction, boolean includeExternal) {
             if (depth < INFINITE_DEPTH || depth == 0)
                 throw new IllegalArgumentException("depth must be positive or INFINITE_DEPTH");
-            Objects.requireNonNull(direction);
+            Objects.requireNonNull(direction, "direction");
+            this.depth = depth;
+            this.direction       = direction;
+            this.includeExternal = includeExternal;
         }
+
+        public int depth()                    { return depth; }
+        public MethodGraph.Direction direction() { return direction; }
+        public boolean includeExternal()      { return includeExternal; }
     }
 
-    private record MethodKey(String owner, String name, String desc) {}
+    private static final class Discovered {
+        private final String owner;
+        private final MethodNode asmNode;
+        private final int depth;
+        private final int rank;
 
-    private record Discovered(String owner, MethodNode asmNode, int depth, int rank) {}
+        Discovered(String owner, MethodNode asmNode, int depth, int rank) {
+            this.owner   = owner;
+            this.asmNode = asmNode;
+            this.depth   = depth;
+            this.rank    = rank;
+        }
 
-    private record NodeDraft(MethodGraph.MethodKey key, Discovered discovered,
-                             float width, float height) {}
+        String owner()      { return owner; }
+        MethodNode asmNode(){ return asmNode; }
+        int depth()         { return depth; }
+        int rank()          { return rank; }
+    }
 
-    private record EdgeKey(MethodGraph.MethodKey caller, MethodGraph.MethodKey callee) {}
+    private static final class NodeDraft {
+        private final MethodGraph.MethodKey key;
+        private final Discovered discovered;
+        private final float width;
+        private final float height;
 
-    private record Link(String sourceOwner, MethodNode sourceNode, MethodGraph.MethodKey sourceKey,
-                        String targetOwner, MethodNode targetNode, MethodGraph.MethodKey targetKey,
-                        boolean dynamic) {}
+        NodeDraft(MethodGraph.MethodKey key, Discovered discovered, float width, float height) {
+            this.key        = key;
+            this.discovered = discovered;
+            this.width      = width;
+            this.height     = height;
+        }
+
+        MethodGraph.MethodKey key()  { return key; }
+        Discovered discovered()      { return discovered; }
+        float width()                { return width; }
+        float height()               { return height; }
+    }
+
+    private static final class EdgeKey {
+        private final MethodGraph.MethodKey caller;
+        private final MethodGraph.MethodKey callee;
+
+        EdgeKey(MethodGraph.MethodKey caller, MethodGraph.MethodKey callee) {
+            this.caller = caller; this.callee = callee;
+        }
+
+        MethodGraph.MethodKey caller() { return caller; }
+        MethodGraph.MethodKey callee() { return callee; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof EdgeKey)) return false;
+            EdgeKey e = (EdgeKey) o;
+            return caller.equals(e.caller) && callee.equals(e.callee);
+        }
+
+        @Override
+        public int hashCode() { return 31 * caller.hashCode() + callee.hashCode(); }
+    }
+
+    private static final class Link {
+        private final String sourceOwner;
+        private final MethodNode sourceNode;
+        private final MethodGraph.MethodKey sourceKey;
+        private final String targetOwner;
+        private final MethodNode targetNode;
+        private final MethodGraph.MethodKey targetKey;
+        private final boolean dynamic;
+
+        Link(String sourceOwner, MethodNode sourceNode, MethodGraph.MethodKey sourceKey,
+             String targetOwner, MethodNode targetNode, MethodGraph.MethodKey targetKey,
+             boolean dynamic) {
+            this.sourceOwner = sourceOwner; this.sourceNode = sourceNode; this.sourceKey = sourceKey;
+            this.targetOwner = targetOwner; this.targetNode = targetNode; this.targetKey = targetKey;
+            this.dynamic = dynamic;
+        }
+
+        String sourceOwner()            { return sourceOwner; }
+        MethodNode sourceNode()         { return sourceNode; }
+        MethodGraph.MethodKey sourceKey(){ return sourceKey; }
+        String targetOwner()            { return targetOwner; }
+        MethodNode targetNode()         { return targetNode; }
+        MethodGraph.MethodKey targetKey(){ return targetKey; }
+        boolean dynamic()               { return dynamic; }
+    }
 
     private static final class MutableLink {
         private final String targetOwner;
@@ -281,8 +405,8 @@ public final class MethodGraphAnalyzer {
 
         MutableLink(String targetOwner, MethodNode targetNode, MethodGraph.MethodKey targetKey) {
             this.targetOwner = targetOwner;
-            this.targetNode = targetNode;
-            this.targetKey = targetKey;
+            this.targetNode  = targetNode;
+            this.targetKey   = targetKey;
         }
 
         void add(boolean dynamic) { count++; this.dynamic |= dynamic; }
@@ -295,7 +419,6 @@ public final class MethodGraphAnalyzer {
     private static final class MutableEdge {
         int count;
         boolean dynamic;
-
         void add(boolean dynamic) { count++; this.dynamic |= dynamic; }
     }
 }
