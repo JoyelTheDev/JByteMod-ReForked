@@ -3,9 +3,11 @@ package me.grax.jbytemod.ui;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.Main;
 import lombok.Getter;
+import dev.joyel.decompiler.NavigableDecompilerTab;
 import me.grax.jbytemod.ui.graph.ControlFlowPanel;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
@@ -16,7 +18,7 @@ public class MyEditorTab extends JPanel {
     private final String analysisText = Main.INSTANCE.getJByteMod().getLanguageRes().getResource("analysis");
     private final JPanel code;
     private final JPanel info;
-    private final DecompilerTab decompiler;
+    private final NavigableDecompilerTab decompiler;
     private final ControlFlowPanel analysis;
     private final JPanel center;
     private final JButton codeButton;
@@ -37,7 +39,7 @@ public class MyEditorTab extends JPanel {
 
         this.info = this.withBorder(new JLabel(jbm.getLanguageRes().getResource("settings")), sp);
 
-        this.decompiler = new DecompilerTab(jbm);
+        this.decompiler = new NavigableDecompilerTab(jbm);
         this.decompiler.setName("decompiler");
 
         jbm.setControlFlowPanel(this.analysis = new ControlFlowPanel(jbm));
