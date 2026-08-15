@@ -7,6 +7,7 @@ import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.plugin.Plugin;
 import de.xbrowniecodez.jbytemod.ui.StringDecryptorDialog;
+import dev.joyel.methodgraph.MethodGraphMenuIntegration;
 import dev.joyel.pattern.ui.PatternMenuIntegration;
 import dev.joyel.theme.ui.ThemeMenuIntegration;
 import me.grax.jbytemod.undo.MethodUndoManager;
@@ -53,6 +54,7 @@ public class MyMenuBar extends JMenuBar {
         PatternMenuIntegration.installInto(this, jam);
         File themeDir = new File(System.getProperty("user.home"), ".jbytemod" + File.separator + "themes");
         ThemeMenuIntegration.installInto(this, jam, themeDir);
+        MethodGraphMenuIntegration.installInto(this, jam);
     }
 
     private void initEditMenu() {
