@@ -5,24 +5,18 @@ on:
     branches: [ master ]
 
 permissions:
-  contents: write   # REQUIRED to create GitHub releases
+  contents: write 
 
 jobs:
   build:
     runs-on: ubuntu-24.04
 
     steps:
-      # -----------------------------
-      # Checkout
-      # -----------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # REQUIRED for git tags & changelog
+          fetch-depth: 0  
 
-      # -----------------------------
-      # Java
-      # -----------------------------
       - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
@@ -30,15 +24,9 @@ jobs:
           distribution: 'microsoft'
           cache: maven
 
-      # -----------------------------
-      # Build with Maven
-      # -----------------------------
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml
 
-      # -----------------------------
-      # Find the JAR file
-      # -----------------------------
       - name: Find JAR
         run: |
           echo "📦 target/ contents:"
@@ -59,9 +47,6 @@ jobs:
           echo "JAR_FILE=$JAR_FILE" >> "$GITHUB_ENV"
           echo "JAR_NAME=$(basename "$JAR_FILE")" >> "$GITHUB_ENV"
 
-      # -----------------------------
-      # Generate changelog (since last tag)
-      # -----------------------------
       - name: Generate changelog
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
@@ -77,9 +62,6 @@ jobs:
             git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)" >> CHANGELOG.md
           fi
 
-      # -----------------------------
-      # GitHub Release
-      # -----------------------------
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:

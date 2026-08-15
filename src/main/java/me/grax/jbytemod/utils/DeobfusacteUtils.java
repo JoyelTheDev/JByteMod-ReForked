@@ -7,7 +7,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.util.CheckClassAdapter;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -16,7 +15,6 @@ import static org.objectweb.asm.Opcodes.*;
 
 import com.javadeobfuscator.deobfuscator.analyzer.frame.*;
 import com.javadeobfuscator.deobfuscator.utils.Utils;
-
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 

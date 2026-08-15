@@ -12,7 +12,7 @@ import java.time.Year;
  */
 public class PageEndPanel extends JPanel {
     private static final int currentYear = Year.now().getValue();
-    private static final String COPYRIGHT_TEXT = "\u00A9 brownie 2020 - " + currentYear;
+    private static final String COPYRIGHT_TEXT = "\u00A9 JByteMod 2020 - " + currentYear;
     private JProgressBar progressBar;
     private JLabel percentLabel;
     private JLabel copyrightLabel;

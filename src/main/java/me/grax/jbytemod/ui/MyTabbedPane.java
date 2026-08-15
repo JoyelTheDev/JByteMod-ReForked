@@ -6,7 +6,6 @@ import de.xbrowniecodez.jbytemod.ui.lists.SearchList;
 import me.grax.jbytemod.bookmark.BookmarkPanel;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.TabbedPaneUI;

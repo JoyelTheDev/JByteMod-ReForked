@@ -6,7 +6,6 @@ import lombok.Getter;
 import me.grax.jbytemod.ui.graph.ControlFlowPanel;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;

@@ -2,7 +2,6 @@ package me.grax.jbytemod.ui;
 
 import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
-
 import javax.swing.*;
 import java.awt.*;
 

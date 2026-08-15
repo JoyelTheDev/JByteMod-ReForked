@@ -1,7 +1,5 @@
 package me.grax.jbytemod.utils.gui;
 
-
-
 import javax.swing.*;
 import javax.swing.plaf.ListUI;
 import javax.swing.plaf.basic.BasicListUI;

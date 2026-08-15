@@ -9,7 +9,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 public class ErrorDisplay extends JFrame {
-    private static final String suffix = "\n\nPlease report exceptions on github.\n\nhttps://github.com/GraxCode/JByteMod-Beta";
+    private static final String suffix = "\n\nPlease report exceptions on github.\n\nhttps://github.com/JoyelTheDev/JByteMod-ReForked";
 
     public ErrorDisplay(Throwable t) {
         StringWriter sw = new StringWriter();
