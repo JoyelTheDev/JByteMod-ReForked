@@ -7,6 +7,7 @@ import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.plugin.Plugin;
 import de.xbrowniecodez.jbytemod.ui.StringDecryptorDialog;
+import dev.joyel.constpool.ConstantPoolMenuIntegration;
 import dev.joyel.hierarchy.HierarchyMenuIntegration;
 import dev.joyel.methodgraph.MethodGraphMenuIntegration;
 import dev.joyel.pattern.ui.PatternMenuIntegration;
@@ -57,6 +58,7 @@ public class MyMenuBar extends JMenuBar {
         ThemeMenuIntegration.installInto(this, jam, themeDir);
         MethodGraphMenuIntegration.installInto(this, jam);
         HierarchyMenuIntegration.installInto(this, jam);
+        ConstantPoolMenuIntegration.installInto(this, jam);
     }
 
     private void initEditMenu() {
