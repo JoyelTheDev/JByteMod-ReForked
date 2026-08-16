@@ -1,11 +1,10 @@
 package de.xbrowniecodez.jbytemod;
 
-import de.xbrowniecodez.jbytemod.utils.update.UpdateChecker;
+import dev.joyel.update.UpdateService;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import de.xbrowniecodez.jbytemod.discord.Discord;
 import me.grax.jbytemod.logging.Logging;
-
 import me.grax.jbytemod.utils.FileUtils;
 import org.apache.commons.cli.*;
 
@@ -18,7 +17,7 @@ public enum Main {
     private JByteMod jByteMod;
     private Logging logger;
     private Discord discord;
-    private UpdateChecker updateChecker;
+
 
     public static void main(String[] args) { Main.INSTANCE.start(args); }
     @SneakyThrows
@@ -34,7 +33,8 @@ public enum Main {
             this.jByteMod.setVisible(true);
             this.loadFileIfNeeded(cmd, jByteMod);
         });
-        this.updateChecker = new UpdateChecker();
+        String currentVersion = this.jByteMod.getVersion().toString();
+        UpdateService.checkAsync(currentVersion);
     }
 
     private CommandLine parseCommandLine(String[] args) {
