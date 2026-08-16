@@ -14,7 +14,6 @@ import me.lpk.util.drop.IDropUser;
 import me.lpk.util.drop.JarDropHandler;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
-
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
@@ -22,7 +21,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.tree.*;
 import dev.joyel.hex.HexEditorDialog;
 import dev.joyel.hex.ResourceEntry;
-
+import dev.joyel.utils.ImageViewerFrame;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -213,6 +212,18 @@ public class ClassTree extends JTree implements IDropUser {
                             ResourceEntry resEntry = new ResourceEntry(resPath, resData);
 
                             JPopupMenu menu = new JPopupMenu();
+
+                            if (ImageViewerFrame.isImageEntry(resPath)) {
+                                JMenuItem openImage = new JMenuItem("Open Image Viewer");
+                                final byte[] imageData = resData;
+                                openImage.addActionListener(new ActionListener() {
+                                    public void actionPerformed(ActionEvent e) {
+                                        ImageViewerFrame.open(resPath, imageData);
+                                    }
+                                });
+                                menu.add(openImage);
+                                menu.addSeparator();
+                            }
 
                             JMenuItem openHex = new JMenuItem("Open in Hex Editor");
                             final ResourceEntry finalEntry = resEntry;
