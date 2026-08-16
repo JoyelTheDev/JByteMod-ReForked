@@ -31,6 +31,7 @@ import org.objectweb.asm.tree.*;
 import sun.tools.attach.WindowsAttachProvider;
 
 import javax.swing.*;
+import dev.joyel.search.GlobalSearchPanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -164,6 +165,16 @@ public class MyMenuBar extends JMenuBar {
         this.add(file);
 
         JMenu search = new JMenu(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("search"));
+        JMenuItem globalSearch = new JMenuItem("Global Search (Regex)");
+        globalSearch.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        globalSearch.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openGlobalSearch();
+            }
+        });
+        search.add(globalSearch);
+        search.addSeparator();
         JMenuItem ldc = new JMenuItem(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("search_ldc"));
         ldc.addActionListener(new ActionListener() {
             @Override
@@ -715,7 +726,22 @@ public class MyMenuBar extends JMenuBar {
         return settings;
     }
 
-    protected void searchLDC() {
+    protected void openGlobalSearch() {
+        if (jbm.getTabbedPane() == null) return;
+        JTabbedPane tp = jbm.getTabbedPane();
+        for (int i = 0; i < tp.getTabCount(); i++) {
+            if ("Global Search".equals(tp.getTitleAt(i))) {
+                tp.setSelectedIndex(i);
+                Component comp = tp.getComponentAt(i);
+                if (comp instanceof GlobalSearchPanel) {
+                    ((GlobalSearchPanel) comp).focusQuery();
+                }
+                return;
+            }
+        }
+    }
+
+        protected void searchLDC() {
         final JPanel panel = new JPanel(new BorderLayout(5, 5));
         final JPanel input = new JPanel(new GridLayout(0, 1));
         final JPanel labels = new JPanel(new GridLayout(0, 1));
