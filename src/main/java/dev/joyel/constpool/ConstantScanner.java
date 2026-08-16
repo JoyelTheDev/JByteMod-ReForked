@@ -4,7 +4,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-
+import org.objectweb.asm.ConstantDynamic;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
