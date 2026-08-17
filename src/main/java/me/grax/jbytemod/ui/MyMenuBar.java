@@ -12,6 +12,7 @@ import dev.joyel.hierarchy.HierarchyMenuIntegration;
 import dev.joyel.methodgraph.MethodGraphMenuIntegration;
 import dev.joyel.pattern.ui.PatternMenuIntegration;
 import dev.joyel.theme.ui.ThemeMenuIntegration;
+import dev.joyel.mapping.ui.MappingMenuIntegration;
 import me.grax.jbytemod.undo.MethodUndoManager;
 import me.grax.jbytemod.res.LanguageRes;
 import me.grax.jbytemod.res.Option;
@@ -62,6 +63,7 @@ public class MyMenuBar extends JMenuBar {
         MethodGraphMenuIntegration.installInto(this, jam);
         HierarchyMenuIntegration.installInto(this, jam);
         ConstantPoolMenuIntegration.installInto(this, jam);
+        
     }
 
     private void initEditMenu() {
