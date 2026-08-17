@@ -31,7 +31,8 @@ import org.objectweb.asm.tree.*;
 import sun.tools.attach.WindowsAttachProvider;
 
 import javax.swing.*;
-import dev.joyel.search.GlobalSearchPanel;
+import de.xbrowniecodez.jbytemod.ui.search.GlobalSearchPanel;
+import de.xbrowniecodez.jbytemod.ui.script.ScriptConsolePanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -165,6 +166,15 @@ public class MyMenuBar extends JMenuBar {
         this.add(file);
 
         JMenu search = new JMenu(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("search"));
+        JMenuItem scriptConsole = new JMenuItem("Script Console");
+        scriptConsole.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F9, 0));
+        scriptConsole.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openScriptConsole();
+            }
+        });
+        search.add(scriptConsole);
         JMenuItem globalSearch = new JMenuItem("Global Search (Regex)");
         globalSearch.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
         globalSearch.addActionListener(new ActionListener() {
@@ -726,7 +736,22 @@ public class MyMenuBar extends JMenuBar {
         return settings;
     }
 
-    protected void openGlobalSearch() {
+    protected void openScriptConsole() {
+        if (jbm.getTabbedPane() == null) return;
+        JTabbedPane tp = jbm.getTabbedPane();
+        for (int i = 0; i < tp.getTabCount(); i++) {
+            if ("Script Console".equals(tp.getTitleAt(i))) {
+                tp.setSelectedIndex(i);
+                Component comp = tp.getComponentAt(i);
+                if (comp instanceof ScriptConsolePanel) {
+                    ((ScriptConsolePanel) comp).focusEditor();
+                }
+                return;
+            }
+        }
+    }
+
+        protected void openGlobalSearch() {
         if (jbm.getTabbedPane() == null) return;
         JTabbedPane tp = jbm.getTabbedPane();
         for (int i = 0; i < tp.getTabCount(); i++) {

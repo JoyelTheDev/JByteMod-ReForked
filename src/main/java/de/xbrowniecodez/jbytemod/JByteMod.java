@@ -281,6 +281,9 @@ public class JByteMod extends JFrame {
         }
     }
 
+    public me.grax.jbytemod.ui.MyTabbedPane getTabbedPane() { return tabbedPane; }
+    public me.grax.jbytemod.ui.MyMenuBar getMyMenuBar() { return myMenuBar; }
+    public me.grax.jbytemod.ui.PageEndPanel getPageEndPanel() { return pageEndPanel; }
     public me.grax.jbytemod.ui.lists.MyCodeList getCodeList() { return codeList; }
     public me.grax.jbytemod.ui.ClassTree getJarTree() { return jarTree; }
     public de.xbrowniecodez.jbytemod.ui.lists.SearchList getSearchList() { return searchList; }
