@@ -4,6 +4,7 @@ import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.ui.lists.SearchList;
 import dev.joyel.search.GlobalSearchPanel;
+import dev.joyel.ui.metrics.MetricsPanel;
 import dev.joyel.ui.script.ScriptConsolePanel;
 import me.grax.jbytemod.bookmark.BookmarkPanel;
 import org.objectweb.asm.tree.ClassNode;
@@ -31,9 +32,15 @@ public class MyTabbedPane extends JTabbedPane {
         this.addTab("Global Search", globalSearchPanel);
         ScriptConsolePanel scriptConsolePanel = new ScriptConsolePanel(jbm);
         this.addTab("Script Console", scriptConsolePanel);
+        MetricsPanel metricsPanel = new MetricsPanel(jbm);
+        jbm.setMetricsPanel(metricsPanel);
+        this.addTab("Metrics", metricsPanel);
         this.addTab("Opcodes", this.withBorder(new JLabel("Opcodes"), new OpcodeTable()));
         BookmarkPanel bookmarkPanel = new BookmarkPanel(jbm);
         this.addTab("Bookmarks", this.withBorder(new JLabel("Bookmarks"), bookmarkPanel));
+        //MethodRefPanel mrp = new MethodRefPanel(jbm);
+        //jbm.setMethodRefPanel(mrp);
+        //this.addTab("References", mrp);
         jbm.setTabbedPane(this);
         this.addMouseListener(new MouseAdapter() {
             @Override

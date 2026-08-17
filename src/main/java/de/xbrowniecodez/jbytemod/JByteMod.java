@@ -27,9 +27,9 @@ import me.grax.jbytemod.utils.task.AttachTask;
 import me.grax.jbytemod.utils.task.RetransformTask;
 import me.grax.jbytemod.utils.task.SaveTask;
 import me.lpk.util.OpUtils;
+import dev.joyel.ui.metrics.MetricsPanel;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.tree.DefaultTreeModel;
@@ -66,6 +66,7 @@ public class JByteMod extends JFrame {
     private TCBList tcbList;
     private MyTabbedPane tabbedPane;
     private InfoPanel infoPanel;
+    private MetricsPanel metricsPanel;
     private LVPList lvpList;
     private MyMenuBar myMenuBar;
     private ClassNode currentNode;
@@ -235,6 +236,7 @@ public class JByteMod extends JFrame {
         infoPanel.selectClass(cn);
         codeList.loadFields(cn);
         tabbedPane.selectClass(cn);
+        if (metricsPanel != null) metricsPanel.showClassMetrics(cn);
         lastSelectedTreeEntries.put(cn, null);
         if (lastSelectedTreeEntries.size() > 5) {
             lastSelectedTreeEntries.remove(lastSelectedTreeEntries.keySet().iterator().next());
@@ -275,12 +277,15 @@ public class JByteMod extends JFrame {
         controlFlowPanel.setMethodNode(mn);
         decompilerPanel.setText("");
         tabbedPane.selectMethod(cn, mn);
+        if (metricsPanel != null) metricsPanel.showMethodMetrics(cn, mn);
         lastSelectedTreeEntries.put(cn, mn);
         if (lastSelectedTreeEntries.size() > 5) {
             lastSelectedTreeEntries.remove(lastSelectedTreeEntries.keySet().iterator().next());
         }
     }
 
+    public void setMetricsPanel(MetricsPanel p) { this.metricsPanel = p; }
+    public MetricsPanel getMetricsPanel() { return metricsPanel; }
     public me.grax.jbytemod.ui.MyTabbedPane getTabbedPane() { return tabbedPane; }
     public me.grax.jbytemod.ui.MyMenuBar getMyMenuBar() { return myMenuBar; }
     public me.grax.jbytemod.ui.PageEndPanel getPageEndPanel() { return pageEndPanel; }

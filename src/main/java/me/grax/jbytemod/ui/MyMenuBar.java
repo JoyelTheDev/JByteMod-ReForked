@@ -32,7 +32,8 @@ import sun.tools.attach.WindowsAttachProvider;
 
 import javax.swing.*;
 import dev.joyel.search.GlobalSearchPanel;
-import dev.joyel.ui.script.ScriptConsolePanel;
+import dev.joyel.ui.metrics.MetricsPanel;
+import de.joyel.ui.script.ScriptConsolePanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -166,6 +167,15 @@ public class MyMenuBar extends JMenuBar {
         this.add(file);
 
         JMenu search = new JMenu(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("search"));
+        JMenuItem metricsItem = new JMenuItem("Metrics Panel");
+        metricsItem.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F8, 0));
+        metricsItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openMetricsPanel();
+            }
+        });
+        search.add(metricsItem);
         JMenuItem scriptConsole = new JMenuItem("Script Console");
         scriptConsole.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F9, 0));
         scriptConsole.addActionListener(new ActionListener() {
@@ -736,7 +746,18 @@ public class MyMenuBar extends JMenuBar {
         return settings;
     }
 
-    protected void openScriptConsole() {
+    protected void openMetricsPanel() {
+        if (jbm.getTabbedPane() == null) return;
+        JTabbedPane tp = jbm.getTabbedPane();
+        for (int i = 0; i < tp.getTabCount(); i++) {
+            if ("Metrics".equals(tp.getTitleAt(i))) {
+                tp.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
+        protected void openScriptConsole() {
         if (jbm.getTabbedPane() == null) return;
         JTabbedPane tp = jbm.getTabbedPane();
         for (int i = 0; i < tp.getTabCount(); i++) {
