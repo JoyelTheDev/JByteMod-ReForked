@@ -27,6 +27,7 @@ import me.grax.jbytemod.utils.gui.LookUtils;
 import me.grax.jbytemod.utils.list.LazyListModel;
 import me.grax.jbytemod.ui.xref.XrefStatsFrame;
 import me.grax.jbytemod.xref.XrefManager;
+import dev.joyel.tutorial.TutorialMenuIntegration;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.tree.*;
 import sun.tools.attach.WindowsAttachProvider;
@@ -63,6 +64,7 @@ public class MyMenuBar extends JMenuBar {
         MethodGraphMenuIntegration.installInto(this, jam);
         HierarchyMenuIntegration.installInto(this, jam);
         ConstantPoolMenuIntegration.installInto(this, jam);
+        TutorialMenuIntegration.installInto(this, jam);
         
     }
 

@@ -18,6 +18,7 @@ import me.grax.jbytemod.ui.*;
 import de.xbrowniecodez.jbytemod.ui.lists.LVPList;
 import me.grax.jbytemod.ui.graph.ControlFlowPanel;
 import me.grax.jbytemod.ui.lists.MyCodeList;
+import dev.joyel.tutorial.TutorialDialog;
 import de.xbrowniecodez.jbytemod.ui.lists.SearchList;
 import de.xbrowniecodez.jbytemod.ui.lists.TCBList;
 import me.grax.jbytemod.ui.tree.SortedTreeNode;
@@ -310,6 +311,7 @@ public class JByteMod extends JFrame {
         this.myMenuBar.addPluginMenu(pluginManager.getPlugins());
         restoreSavedTheme();
         super.setVisible(b);
+        TutorialDialog.openIfFirstTime(this);
     }
 
     private void restoreSavedTheme() {
