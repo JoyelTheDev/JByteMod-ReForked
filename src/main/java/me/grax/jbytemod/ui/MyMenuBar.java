@@ -33,7 +33,7 @@ import sun.tools.attach.WindowsAttachProvider;
 import javax.swing.*;
 import dev.joyel.search.GlobalSearchPanel;
 import dev.joyel.ui.metrics.MetricsPanel;
-import de.joyel.ui.script.ScriptConsolePanel;
+import dev.joyel.ui.script.ScriptConsolePanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
