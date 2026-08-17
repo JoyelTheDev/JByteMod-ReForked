@@ -31,8 +31,8 @@ import org.objectweb.asm.tree.*;
 import sun.tools.attach.WindowsAttachProvider;
 
 import javax.swing.*;
-import de.xbrowniecodez.jbytemod.ui.search.GlobalSearchPanel;
-import de.xbrowniecodez.jbytemod.ui.script.ScriptConsolePanel;
+import dev.joyel.search.GlobalSearchPanel;
+import dev.joyel.ui.script.ScriptConsolePanel;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
