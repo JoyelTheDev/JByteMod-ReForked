@@ -1,7 +1,6 @@
 package dev.joyel.ui.metrics;
 
 import org.objectweb.asm.tree.*;
-
 import java.util.*;
 
 public final class BytecodeMetrics {
@@ -159,25 +158,69 @@ public final class BytecodeMetrics {
         return new ClassMetrics(methodCount, fieldCount, totalInstr, avgCC, maxCC, totalHandlers, obfScore);
     }
 
-    public record MethodMetrics(
-        int instructionCount,
-        int cyclomaticComplexity,
-        int exceptionHandlers,
-        int localVariables,
-        int maxStack,
-        int maxLocals,
-        int branchCount,
-        int ldcStrings,
-        int obfuscationScore
-    ) {}
+    public static final class MethodMetrics {
+        private final int instructionCount;
+        private final int cyclomaticComplexity;
+        private final int exceptionHandlers;
+        private final int localVariables;
+        private final int maxStack;
+        private final int maxLocals;
+        private final int branchCount;
+        private final int ldcStrings;
+        private final int obfuscationScore;
 
-    public record ClassMetrics(
-        int methodCount,
-        int fieldCount,
-        int totalInstructions,
-        int avgCyclomaticComplexity,
-        int maxCyclomaticComplexity,
-        int totalExceptionHandlers,
-        int obfuscationScore
-    ) {}
+        public MethodMetrics(int instructionCount, int cyclomaticComplexity, int exceptionHandlers,
+                             int localVariables, int maxStack, int maxLocals,
+                             int branchCount, int ldcStrings, int obfuscationScore) {
+            this.instructionCount = instructionCount;
+            this.cyclomaticComplexity = cyclomaticComplexity;
+            this.exceptionHandlers = exceptionHandlers;
+            this.localVariables = localVariables;
+            this.maxStack = maxStack;
+            this.maxLocals = maxLocals;
+            this.branchCount = branchCount;
+            this.ldcStrings = ldcStrings;
+            this.obfuscationScore = obfuscationScore;
+        }
+
+        public int instructionCount() { return instructionCount; }
+        public int cyclomaticComplexity() { return cyclomaticComplexity; }
+        public int exceptionHandlers() { return exceptionHandlers; }
+        public int localVariables() { return localVariables; }
+        public int maxStack() { return maxStack; }
+        public int maxLocals() { return maxLocals; }
+        public int branchCount() { return branchCount; }
+        public int ldcStrings() { return ldcStrings; }
+        public int obfuscationScore() { return obfuscationScore; }
+    }
+
+    public static final class ClassMetrics {
+        private final int methodCount;
+        private final int fieldCount;
+        private final int totalInstructions;
+        private final int avgCyclomaticComplexity;
+        private final int maxCyclomaticComplexity;
+        private final int totalExceptionHandlers;
+        private final int obfuscationScore;
+
+        public ClassMetrics(int methodCount, int fieldCount, int totalInstructions,
+                            int avgCyclomaticComplexity, int maxCyclomaticComplexity,
+                            int totalExceptionHandlers, int obfuscationScore) {
+            this.methodCount = methodCount;
+            this.fieldCount = fieldCount;
+            this.totalInstructions = totalInstructions;
+            this.avgCyclomaticComplexity = avgCyclomaticComplexity;
+            this.maxCyclomaticComplexity = maxCyclomaticComplexity;
+            this.totalExceptionHandlers = totalExceptionHandlers;
+            this.obfuscationScore = obfuscationScore;
+        }
+
+        public int methodCount() { return methodCount; }
+        public int fieldCount() { return fieldCount; }
+        public int totalInstructions() { return totalInstructions; }
+        public int avgCyclomaticComplexity() { return avgCyclomaticComplexity; }
+        public int maxCyclomaticComplexity() { return maxCyclomaticComplexity; }
+        public int totalExceptionHandlers() { return totalExceptionHandlers; }
+        public int obfuscationScore() { return obfuscationScore; }
+    }
 }
