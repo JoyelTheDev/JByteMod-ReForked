@@ -11,20 +11,17 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 public final class ImageViewerFrame extends JFrame {
-
-    private static final float MIN_ZOOM    = 0.01f;
-    private static final float MAX_ZOOM    = 32f;
-    private static final float ZOOM_STEP   = 1.15f;
-    private static final int   CHECKER_SIZE = 12;
-
+    private static final float MIN_ZOOM = 0.01f;
+    private static final float MAX_ZOOM = 32f;
+    private static final float ZOOM_STEP = 1.15f;
+    private static final int CHECKER_SIZE = 12;
     private static final Color CHECKER_A = new Color(0x3a3a3a);
     private static final Color CHECKER_B = new Color(0x2a2a2a);
-    private static final Color BG_COLOR  = new Color(0x1e1e1e);
+    private static final Color BG_COLOR = new Color(0x1e1e1e);
 
     private final String entryName;
     private BufferedImage image;
     private String loadError;
-
     private float zoom = 1f;
     private float panX = 0f;
     private float panY = 0f;
@@ -37,95 +34,34 @@ public final class ImageViewerFrame extends JFrame {
     public ImageViewerFrame(String entryName, byte[] data) {
         super("Image Viewer \u2013 " + shortName(entryName));
         this.entryName = entryName;
-
         loadImage(data);
 
-        canvas    = new ImageCanvas();
+        canvas = new ImageCanvas();
         infoLabel = new JLabel(" ");
         zoomLabel = new JLabel("100%");
 
-        infoLabel.setForeground(Color.GRAY);
-        infoLabel.setFont(infoLabel.getFont().deriveFont(Font.PLAIN, 11f));
-        zoomLabel.setForeground(Color.GRAY);
-        zoomLabel.setFont(zoomLabel.getFont().deriveFont(Font.PLAIN, 11f));
-
-        if (image != null) {
-            infoLabel.setText(" " + image.getWidth() + " \u00d7 " + image.getHeight()
-                    + "  |  " + shortName(entryName));
-        } else {
-            infoLabel.setText(" " + (loadError != null ? loadError : "Unknown error"));
-        }
-
-        JButton fitBtn   = toolButton("Fit",    new Runnable() { public void run() { fitToWindow(); } });
-        JButton zoomInBtn  = toolButton("+",    new Runnable() { public void run() { setZoom(zoom * ZOOM_STEP); } });
-        JButton zoomOutBtn = toolButton("-",    new Runnable() { public void run() { setZoom(zoom / ZOOM_STEP); } });
-        JButton resetBtn = toolButton("1:1",    new Runnable() { public void run() { resetZoom(); } });
-        JButton centerBtn = toolButton("Center", new Runnable() { public void run() { centerImage(); } });
-
-        JToolBar toolbar = new JToolBar();
-        toolbar.setFloatable(false);
-        toolbar.setBorder(new EmptyBorder(3, 5, 3, 5));
-        toolbar.add(fitBtn);
-        toolbar.add(zoomOutBtn);
-        toolbar.add(zoomLabel);
-        toolbar.add(zoomInBtn);
-        toolbar.add(resetBtn);
-        toolbar.addSeparator(new Dimension(8, 0));
-        toolbar.add(centerBtn);
-
-        JPanel statusBar = new JPanel(new BorderLayout());
-        statusBar.setBorder(new EmptyBorder(2, 0, 2, 6));
-        statusBar.add(infoLabel, BorderLayout.WEST);
-
-        JPanel content = new JPanel(new BorderLayout(0, 0));
-        content.setBackground(BG_COLOR);
-        content.add(toolbar,   BorderLayout.NORTH);
-        content.add(canvas,    BorderLayout.CENTER);
-        content.add(statusBar, BorderLayout.SOUTH);
-
-        setContentPane(content);
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setSize(820, 620);
-        setLocationRelativeTo(null);
-
-        getRootPane().registerKeyboardAction(
-                new ActionListener() { public void actionPerformed(ActionEvent e) { dispose(); } },
-                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-                JComponent.WHEN_IN_FOCUSED_WINDOW);
-        getRootPane().registerKeyboardAction(
-                new ActionListener() { public void actionPerformed(ActionEvent e) { fitToWindow(); } },
-                KeyStroke.getKeyStroke(KeyEvent.VK_F, 0),
-                JComponent.WHEN_IN_FOCUSED_WINDOW);
-        getRootPane().registerKeyboardAction(
-                new ActionListener() { public void actionPerformed(ActionEvent e) { setZoom(zoom * ZOOM_STEP); } },
-                KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK),
-                JComponent.WHEN_IN_FOCUSED_WINDOW);
-        getRootPane().registerKeyboardAction(
-                new ActionListener() { public void actionPerformed(ActionEvent e) { setZoom(zoom / ZOOM_STEP); } },
-                KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK),
-                JComponent.WHEN_IN_FOCUSED_WINDOW);
-        getRootPane().registerKeyboardAction(
-                new ActionListener() { public void actionPerformed(ActionEvent e) { resetZoom(); } },
-                KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK),
-                JComponent.WHEN_IN_FOCUSED_WINDOW);
+        configureLabels();
+        configureToolbar();
+        configureStatusBar();
+        configureContentPane();
+        configureFrame();
+        configureKeyboardShortcuts();
     }
 
     public static void open(String entryName, byte[] data) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                new ImageViewerFrame(entryName, data).setVisible(true);
-            }
-        });
+        SwingUtilities.invokeLater(() -> new ImageViewerFrame(entryName, data).setVisible(true));
     }
 
     public static boolean isImageEntry(String entryName) {
-        if (entryName == null) return false;
+        if (entryName == null) {
+            return false;
+        }
         String lower = entryName.toLowerCase();
-        return lower.endsWith(".png")  || lower.endsWith(".jpg")
-                || lower.endsWith(".jpeg") || lower.endsWith(".gif")
-                || lower.endsWith(".bmp")  || lower.endsWith(".webp")
-                || lower.endsWith(".ico")  || lower.endsWith(".tiff")
-                || lower.endsWith(".tif");
+        return lower.endsWith(".png") || lower.endsWith(".jpg") ||
+               lower.endsWith(".jpeg") || lower.endsWith(".gif") ||
+               lower.endsWith(".bmp") || lower.endsWith(".webp") ||
+               lower.endsWith(".ico") || lower.endsWith(".tiff") ||
+               lower.endsWith(".tif");
     }
 
     private void loadImage(byte[] data) {
@@ -144,11 +80,97 @@ public final class ImageViewerFrame extends JFrame {
         }
     }
 
+    private void configureLabels() {
+        infoLabel.setForeground(Color.GRAY);
+        infoLabel.setFont(infoLabel.getFont().deriveFont(Font.PLAIN, 11f));
+        zoomLabel.setForeground(Color.GRAY);
+        zoomLabel.setFont(zoomLabel.getFont().deriveFont(Font.PLAIN, 11f));
+
+        if (image != null) {
+            infoLabel.setText(" " + image.getWidth() + " \u00d7 " + image.getHeight() +
+                            "  |  " + shortName(entryName));
+        } else {
+            infoLabel.setText(" " + (loadError != null ? loadError : "Unknown error"));
+        }
+    }
+
+    private void configureToolbar() {
+        JButton fitBtn = createToolButton("Fit", this::fitToWindow);
+        JButton zoomInBtn = createToolButton("+", () -> setZoom(zoom * ZOOM_STEP));
+        JButton zoomOutBtn = createToolButton("-", () -> setZoom(zoom / ZOOM_STEP));
+        JButton resetBtn = createToolButton("1:1", this::resetZoom);
+        JButton centerBtn = createToolButton("Center", this::centerImage);
+
+        JToolBar toolbar = new JToolBar();
+        toolbar.setFloatable(false);
+        toolbar.setBorder(new EmptyBorder(3, 5, 3, 5));
+        toolbar.add(fitBtn);
+        toolbar.add(zoomOutBtn);
+        toolbar.add(zoomLabel);
+        toolbar.add(zoomInBtn);
+        toolbar.add(resetBtn);
+        toolbar.addSeparator(new Dimension(8, 0));
+        toolbar.add(centerBtn);
+        add(toolbar, BorderLayout.NORTH);
+    }
+
+    private void configureStatusBar() {
+        JPanel statusBar = new JPanel(new BorderLayout());
+        statusBar.setBorder(new EmptyBorder(2, 0, 2, 6));
+        statusBar.add(infoLabel, BorderLayout.WEST);
+        add(statusBar, BorderLayout.SOUTH);
+    }
+
+    private void configureContentPane() {
+        JPanel content = new JPanel(new BorderLayout(0, 0));
+        content.setBackground(BG_COLOR);
+        content.add(canvas, BorderLayout.CENTER);
+        setContentPane(content);
+    }
+
+    private void configureFrame() {
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setSize(820, 620);
+        setLocationRelativeTo(null);
+    }
+
+    private void configureKeyboardShortcuts() {
+        getRootPane().registerKeyboardAction(
+            e -> dispose(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+        getRootPane().registerKeyboardAction(
+            e -> fitToWindow(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_F, 0),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+        getRootPane().registerKeyboardAction(
+            e -> setZoom(zoom * ZOOM_STEP),
+            KeyStroke.getKeyStroke(KeyEvent.VK_EQUALS, InputEvent.CTRL_DOWN_MASK),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+        getRootPane().registerKeyboardAction(
+            e -> setZoom(zoom / ZOOM_STEP),
+            KeyStroke.getKeyStroke(KeyEvent.VK_MINUS, InputEvent.CTRL_DOWN_MASK),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+        getRootPane().registerKeyboardAction(
+            e -> resetZoom(),
+            KeyStroke.getKeyStroke(KeyEvent.VK_0, InputEvent.CTRL_DOWN_MASK),
+            JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
+    }
+
     private void fitToWindow() {
-        if (image == null) return;
+        if (image == null) {
+            return;
+        }
         int cw = canvas.getWidth();
         int ch = canvas.getHeight();
-        if (cw <= 0 || ch <= 0) return;
+        if (cw <= 0 || ch <= 0) {
+            return;
+        }
         float sx = (float) cw / image.getWidth();
         float sy = (float) ch / image.getHeight();
         zoom = Math.max(MIN_ZOOM, Math.min(1f, Math.min(sx, sy)));
@@ -183,33 +205,33 @@ public final class ImageViewerFrame extends JFrame {
         return i == -1 ? path : path.substring(i + 1);
     }
 
-    private static JButton toolButton(String text, Runnable action) {
-        JButton b = new JButton(text);
-        b.setFocusPainted(false);
-        b.setMargin(new Insets(2, 6, 2, 6));
-        b.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { action.run(); }
-        });
-        return b;
+    private static JButton createToolButton(String text, Runnable action) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setMargin(new Insets(2, 6, 2, 6));
+        button.addActionListener(e -> action.run());
+        return button;
     }
 
     private final class ImageCanvas extends JPanel {
-
         private Point lastMouse;
         private boolean dragging;
 
         ImageCanvas() {
             setBackground(BG_COLOR);
             setFocusable(true);
+            setupMouseListeners();
+            setupComponentListener();
+        }
 
-            MouseAdapter ma = new MouseAdapter() {
+        private void setupMouseListeners() {
+            MouseAdapter adapter = new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
                     requestFocusInWindow();
-                    if (e.getButton() == MouseEvent.BUTTON1
-                            || e.getButton() == MouseEvent.BUTTON2) {
+                    if (e.getButton() == MouseEvent.BUTTON1 || e.getButton() == MouseEvent.BUTTON2) {
                         lastMouse = e.getPoint();
-                        dragging  = true;
+                        dragging = true;
                         setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
                     }
                     if (SwingUtilities.isRightMouseButton(e)) {
@@ -219,14 +241,16 @@ public final class ImageViewerFrame extends JFrame {
 
                 @Override
                 public void mouseReleased(MouseEvent e) {
-                    dragging  = false;
+                    dragging = false;
                     lastMouse = null;
                     setCursor(Cursor.getDefaultCursor());
                 }
 
                 @Override
                 public void mouseDragged(MouseEvent e) {
-                    if (!dragging || lastMouse == null) return;
+                    if (!dragging || lastMouse == null) {
+                        return;
+                    }
                     panX += e.getX() - lastMouse.x;
                     panY += e.getY() - lastMouse.y;
                     lastMouse = e.getPoint();
@@ -235,13 +259,15 @@ public final class ImageViewerFrame extends JFrame {
 
                 @Override
                 public void mouseWheelMoved(MouseWheelEvent e) {
-                    if (image == null) return;
+                    if (image == null) {
+                        return;
+                    }
                     float oldZoom = zoom;
-                    float factor  = e.getWheelRotation() < 0 ? ZOOM_STEP : 1f / ZOOM_STEP;
+                    float factor = e.getWheelRotation() < 0 ? ZOOM_STEP : 1f / ZOOM_STEP;
                     float newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
                     float mx = e.getX();
                     float my = e.getY();
-                    float cx = getWidth()  * 0.5f + panX;
+                    float cx = getWidth() * 0.5f + panX;
                     float cy = getHeight() * 0.5f + panY;
                     float imgOffX = mx - cx;
                     float imgOffY = my - cy;
@@ -252,10 +278,13 @@ public final class ImageViewerFrame extends JFrame {
                     repaint();
                 }
             };
-            addMouseListener(ma);
-            addMouseMotionListener(ma);
-            addMouseWheelListener(ma);
 
+            addMouseListener(adapter);
+            addMouseMotionListener(adapter);
+            addMouseWheelListener(adapter);
+        }
+
+        private void setupComponentListener() {
             addComponentListener(new ComponentAdapter() {
                 @Override
                 public void componentResized(ComponentEvent e) {
@@ -269,28 +298,17 @@ public final class ImageViewerFrame extends JFrame {
 
         private void showContextMenu(int x, int y) {
             JPopupMenu menu = new JPopupMenu();
-
-            JMenuItem fitItem   = new JMenuItem("Fit to Window  [F]");
+            JMenuItem fitItem = new JMenuItem("Fit to Window  [F]");
             JMenuItem resetItem = new JMenuItem("Actual Size (1:1)  [Ctrl+0]");
-            JMenuItem zoomIn    = new JMenuItem("Zoom In  [Ctrl++]");
-            JMenuItem zoomOut   = new JMenuItem("Zoom Out  [Ctrl+-]");
+            JMenuItem zoomIn = new JMenuItem("Zoom In  [Ctrl++]");
+            JMenuItem zoomOut = new JMenuItem("Zoom Out  [Ctrl+-]");
             JMenuItem centerItem = new JMenuItem("Center");
 
-            fitItem.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) { fitToWindow(); }
-            });
-            resetItem.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) { resetZoom(); }
-            });
-            zoomIn.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) { setZoom(zoom * ZOOM_STEP); }
-            });
-            zoomOut.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) { setZoom(zoom / ZOOM_STEP); }
-            });
-            centerItem.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) { centerImage(); }
-            });
+            fitItem.addActionListener(e -> fitToWindow());
+            resetItem.addActionListener(e -> resetZoom());
+            zoomIn.addActionListener(e -> setZoom(zoom * ZOOM_STEP));
+            zoomOut.addActionListener(e -> setZoom(zoom / ZOOM_STEP));
+            centerItem.addActionListener(e -> centerImage());
 
             menu.add(fitItem);
             menu.add(resetItem);
@@ -306,9 +324,9 @@ public final class ImageViewerFrame extends JFrame {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,        RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,       RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g2.setRenderingHint(RenderingHints.KEY_RENDERING,           RenderingHints.VALUE_RENDER_QUALITY);
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
             if (image == null) {
                 drawError(g2);
@@ -316,10 +334,10 @@ public final class ImageViewerFrame extends JFrame {
                 return;
             }
 
-            int displayW = Math.max(1, Math.round(image.getWidth()  * zoom));
+            int displayW = Math.max(1, Math.round(image.getWidth() * zoom));
             int displayH = Math.max(1, Math.round(image.getHeight() * zoom));
-            int imgX     = Math.round(getWidth()  * 0.5f - displayW * 0.5f + panX);
-            int imgY     = Math.round(getHeight() * 0.5f - displayH * 0.5f + panY);
+            int imgX = Math.round(getWidth() * 0.5f - displayW * 0.5f + panX);
+            int imgY = Math.round(getHeight() * 0.5f - displayH * 0.5f + panY);
 
             drawCheckerboard(g2, imgX, imgY, displayW, displayH);
 
@@ -342,7 +360,9 @@ public final class ImageViewerFrame extends JFrame {
                     int ty = y + row * CHECKER_SIZE;
                     int tw = Math.min(CHECKER_SIZE, x + w - tx);
                     int th = Math.min(CHECKER_SIZE, y + h - ty);
-                    if (tw <= 0 || th <= 0) continue;
+                    if (tw <= 0 || th <= 0) {
+                        continue;
+                    }
                     g2.setColor(((row + col) % 2 == 0) ? CHECKER_A : CHECKER_B);
                     g2.fillRect(tx, ty, tw, th);
                 }
@@ -362,8 +382,10 @@ public final class ImageViewerFrame extends JFrame {
             FontMetrics fm = g2.getFontMetrics();
             int tw = fm.stringWidth(label);
             int th = fm.getAscent();
-            int padX = 7, padY = 4, margin = 8;
-            int bx = getWidth()  - tw - padX * 2 - margin;
+            int padX = 7;
+            int padY = 4;
+            int margin = 8;
+            int bx = getWidth() - tw - padX * 2 - margin;
             int by = margin;
             int bw = tw + padX * 2;
             int bh = th + padY * 2;
@@ -379,8 +401,8 @@ public final class ImageViewerFrame extends JFrame {
             g2.setColor(new Color(0xe05555));
             g2.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 13));
             FontMetrics fm = g2.getFontMetrics();
-            int x = (getWidth()  - fm.stringWidth(msg)) / 2;
-            int y = (getHeight() + fm.getAscent())       / 2;
+            int x = (getWidth() - fm.stringWidth(msg)) / 2;
+            int y = (getHeight() + fm.getAscent()) / 2;
             g2.drawString(msg, x, y);
         }
     }

@@ -17,13 +17,11 @@ import java.io.*;
 import java.util.*;
 import java.util.List;
 
-public class ScriptConsolePanel extends JPanel {
-
+public final class ScriptConsolePanel extends JPanel {
     private static final int MAX_HISTORY = 50;
 
     private final JByteMod jbm;
     private final List<JbmScriptEngine> engines;
-
     private JComboBox<String> engineSelector;
     private RSyntaxTextArea editorArea;
     private JTextPane outputPane;
@@ -32,7 +30,6 @@ public class ScriptConsolePanel extends JPanel {
     private SimpleAttributeSet errorStyle;
     private SimpleAttributeSet resultStyle;
     private SimpleAttributeSet dimStyle;
-
     private final List<String> history = new ArrayList<>();
     private int historyIndex = -1;
 
@@ -82,15 +79,13 @@ public class ScriptConsolePanel extends JPanel {
         JScrollPane outputScroll = new JScrollPane(outputPane);
         outputScroll.setBorder(new TitledBorder("Output"));
 
-        JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editorScroll, outputScroll);
-        split.setResizeWeight(0.6);
-        split.setContinuousLayout(true);
-        add(split, BorderLayout.CENTER);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, editorScroll, outputScroll);
+        splitPane.setResizeWeight(0.6);
+        splitPane.setContinuousLayout(true);
+        add(splitPane, BorderLayout.CENTER);
 
         JPanel bottomBar = buildBottomBar();
         add(bottomBar, BorderLayout.SOUTH);
-
-        redirectSystemOut();
     }
 
     private JPanel buildToolbar() {
@@ -102,27 +97,27 @@ public class ScriptConsolePanel extends JPanel {
             return bar;
         }
 
-        String[] names = engines.stream().map(JbmScriptEngine::name).toArray(String[]::new);
+        String[] names = engines.stream()
+                .map(JbmScriptEngine::name)
+                .toArray(String[]::new);
         engineSelector = new JComboBox<>(names);
         engineSelector.setToolTipText("Select scripting engine");
         bar.add(new JLabel("Engine:"));
         bar.add(engineSelector);
-
         bar.add(Box.createHorizontalStrut(10));
 
-        JButton runBtn = new JButton("▶ Run");
-        runBtn.setToolTipText("Run script (Ctrl+Enter)");
-        runBtn.addActionListener(e -> runScript());
-        bar.add(runBtn);
+        JButton runButton = new JButton("▶ Run");
+        runButton.setToolTipText("Run script (Ctrl+Enter)");
+        runButton.addActionListener(e -> runScript());
+        bar.add(runButton);
 
-        JButton clearBtn = new JButton("Clear Output");
-        clearBtn.addActionListener(e -> clearOutput());
-        bar.add(clearBtn);
+        JButton clearButton = new JButton("Clear Output");
+        clearButton.addActionListener(e -> clearOutput());
+        bar.add(clearButton);
 
-        JButton clearEditorBtn = new JButton("Clear Editor");
-        clearEditorBtn.addActionListener(e -> editorArea.setText(""));
-        bar.add(clearEditorBtn);
-
+        JButton clearEditorButton = new JButton("Clear Editor");
+        clearEditorButton.addActionListener(e -> editorArea.setText(""));
+        bar.add(clearEditorButton);
         bar.add(Box.createHorizontalStrut(10));
 
         JComboBox<String> snippets = buildSnippetMenu();
@@ -134,74 +129,77 @@ public class ScriptConsolePanel extends JPanel {
 
     private JComboBox<String> buildSnippetMenu() {
         String[] snippetNames = {
-            "-- Insert snippet --",
-            "List all class names",
-            "Count methods in selected class",
-            "Print all LDC strings in selected class",
-            "Rename method in selected class",
-            "Print all field names in all classes",
-            "Print opcode counts in selected method",
+                "-- Insert snippet --",
+                "List all class names",
+                "Count methods in selected class",
+                "Print all LDC strings in selected class",
+                "Rename method in selected class",
+                "Print all field names in all classes",
+                "Print opcode counts in selected method"
         };
+
         JComboBox<String> combo = new JComboBox<>(snippetNames);
         combo.addActionListener(e -> {
-            int idx = combo.getSelectedIndex();
-            if (idx <= 0) return;
-            editorArea.setText(getSnippet(idx));
+            int index = combo.getSelectedIndex();
+            if (index <= 0) {
+                return;
+            }
+            editorArea.setText(getSnippet(index));
             combo.setSelectedIndex(0);
         });
         return combo;
     }
 
-    private String getSnippet(int idx) {
-        switch (idx) {
+    private String getSnippet(int index) {
+        switch (index) {
             case 1:
                 return "classes.keySet().each { println it }";
             case 2:
-                return "def cn = jbm.getCurrentNode()\n"
-                     + "if (cn == null) { println 'No class selected'; return }\n"
-                     + "println cn.name + ' has ' + cn.methods.size() + ' method(s)'";
+                return "def cn = jbm.getCurrentNode()\n" +
+                       "if (cn == null) { println 'No class selected'; return }\n" +
+                       "println cn.name + ' has ' + cn.methods.size() + ' method(s)'";
             case 3:
-                return "import org.objectweb.asm.tree.LdcInsnNode\n"
-                     + "import org.objectweb.asm.tree.AbstractInsnNode\n"
-                     + "def cn = jbm.getCurrentNode()\n"
-                     + "if (cn == null) { println 'No class selected'; return }\n"
-                     + "cn.methods.each { mn ->\n"
-                     + "    mn.instructions.each { ain ->\n"
-                     + "        if (ain instanceof LdcInsnNode && ain.cst instanceof String) {\n"
-                     + "            println mn.name + ' -> ' + ain.cst\n"
-                     + "        }\n"
-                     + "    }\n"
-                     + "}";
+                return "import org.objectweb.asm.tree.LdcInsnNode\n" +
+                       "import org.objectweb.asm.tree.AbstractInsnNode\n" +
+                       "def cn = jbm.getCurrentNode()\n" +
+                       "if (cn == null) { println 'No class selected'; return }\n" +
+                       "cn.methods.each { mn ->\n" +
+                       "    mn.instructions.each { ain ->\n" +
+                       "        if (ain instanceof LdcInsnNode && ain.cst instanceof String) {\n" +
+                       "            println mn.name + ' -> ' + ain.cst\n" +
+                       "        }\n" +
+                       "    }\n" +
+                       "}";
             case 4:
-                return "def cn = jbm.getCurrentNode()\n"
-                     + "if (cn == null) { println 'No class selected'; return }\n"
-                     + "def oldName = 'myMethod'\n"
-                     + "def newName = 'renamedMethod'\n"
-                     + "cn.methods.each { mn ->\n"
-                     + "    if (mn.name == oldName) {\n"
-                     + "        mn.name = newName\n"
-                     + "        println 'Renamed ' + oldName + ' -> ' + newName\n"
-                     + "    }\n"
-                     + "}\n"
-                     + "jbm.refreshTree()";
+                return "def cn = jbm.getCurrentNode()\n" +
+                       "if (cn == null) { println 'No class selected'; return }\n" +
+                       "def oldName = 'myMethod'\n" +
+                       "def newName = 'renamedMethod'\n" +
+                       "cn.methods.each { mn ->\n" +
+                       "    if (mn.name == oldName) {\n" +
+                       "        mn.name = newName\n" +
+                       "        println 'Renamed ' + oldName + ' -> ' + newName\n" +
+                       "    }\n" +
+                       "}\n" +
+                       "jbm.refreshTree()";
             case 5:
-                return "classes.values().each { cn ->\n"
-                     + "    cn.fields.each { fn ->\n"
-                     + "        println cn.name + '.' + fn.name + ' : ' + fn.desc\n"
-                     + "    }\n"
-                     + "}";
+                return "classes.values().each { cn ->\n" +
+                       "    cn.fields.each { fn ->\n" +
+                       "        println cn.name + '.' + fn.name + ' : ' + fn.desc\n" +
+                       "    }\n" +
+                       "}";
             case 6:
-                return "import me.lpk.util.OpUtils\n"
-                     + "def mn = jbm.getCurrentMethod()\n"
-                     + "if (mn == null) { println 'No method selected'; return }\n"
-                     + "def counts = [:]\n"
-                     + "mn.instructions.each { ain ->\n"
-                     + "    if (ain.opcode >= 0) {\n"
-                     + "        def name = OpUtils.getOpcodeText(ain.opcode)\n"
-                     + "        counts[name] = (counts[name] ?: 0) + 1\n"
-                     + "    }\n"
-                     + "}\n"
-                     + "counts.sort { -it.value }.each { k, v -> println k + ': ' + v }";
+                return "import me.lpk.util.OpUtils\n" +
+                       "def mn = jbm.getCurrentMethod()\n" +
+                       "if (mn == null) { println 'No method selected'; return }\n" +
+                       "def counts = [:]\n" +
+                       "mn.instructions.each { ain ->\n" +
+                       "    if (ain.opcode >= 0) {\n" +
+                       "        def name = OpUtils.getOpcodeText(ain.opcode)\n" +
+                       "        counts[name] = (counts[name] ?: 0) + 1\n" +
+                       "    }\n" +
+                       "}\n" +
+                       "counts.sort { -it.value }.each { k, v -> println k + ': ' + v }";
             default:
                 return "";
         }
@@ -215,19 +213,12 @@ public class ScriptConsolePanel extends JPanel {
         area.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
         area.setTabSize(4);
         area.setAutoIndentEnabled(true);
+        applyTheme(area);
 
-        try {
-            boolean dark = Main.INSTANCE.getJByteMod().getOptions().get("use_dark_theme").getBoolean();
-            String themeRes = dark
-                ? "/resources/de/brownie/rsyntaxtextarea/themes/custom.xml"
-                : "/org/fife/ui/rsyntaxtextarea/themes/idea.xml";
-            InputStream themeStream = getClass().getResourceAsStream(themeRes);
-            if (themeStream != null) {
-                Theme.load(themeStream).apply(area);
-            }
-        } catch (Exception ignored) {}
-
-        area.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), "run-script");
+        area.getInputMap().put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK),
+                "run-script"
+        );
         area.getActionMap().put("run-script", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -235,7 +226,10 @@ public class ScriptConsolePanel extends JPanel {
             }
         });
 
-        area.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.ALT_DOWN_MASK), "history-prev");
+        area.getInputMap().put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.ALT_DOWN_MASK),
+                "history-prev"
+        );
         area.getActionMap().put("history-prev", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -243,7 +237,10 @@ public class ScriptConsolePanel extends JPanel {
             }
         });
 
-        area.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.ALT_DOWN_MASK), "history-next");
+        area.getInputMap().put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.ALT_DOWN_MASK),
+                "history-next"
+        );
         area.getActionMap().put("history-next", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -255,15 +252,32 @@ public class ScriptConsolePanel extends JPanel {
         return area;
     }
 
+    private void applyTheme(RSyntaxTextArea area) {
+        try {
+            boolean dark = Main.INSTANCE.getJByteMod()
+                    .getOptions()
+                    .get("use_dark_theme")
+                    .getBoolean();
+            String themeResource = dark
+                    ? "/resources/de/brownie/rsyntaxtextarea/themes/custom.xml"
+                    : "/org/fife/ui/rsyntaxtextarea/themes/idea.xml";
+            InputStream themeStream = getClass().getResourceAsStream(themeResource);
+            if (themeStream != null) {
+                Theme.load(themeStream).apply(area);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
     private String getWelcomeText() {
-        return "// Scripting Console\n"
-             + "// Available bindings:\n"
-             + "//   classes  -> Map<String, ClassNode> (all loaded classes)\n"
-             + "//   jbm      -> JByteMod instance\n"
-             + "//   asm      -> org.objectweb.asm.Opcodes (all opcode constants)\n"
-             + "//\n"
-             + "// Ctrl+Enter to run | Alt+Up/Down for history | Snippets menu above\n\n"
-             + "println 'Hello from ' + jbm.getTitle()";
+        return "// Scripting Console\n" +
+               "// Available bindings:\n" +
+               "//   classes  -> Map<String, ClassNode> (all loaded classes)\n" +
+               "//   jbm      -> JByteMod instance\n" +
+               "//   asm      -> org.objectweb.asm.Opcodes (all opcode constants)\n" +
+               "//\n" +
+               "// Ctrl+Enter to run | Alt+Up/Down for history | Snippets menu above\n\n" +
+               "println 'Hello from ' + jbm.getTitle()";
     }
 
     private JPanel buildBottomBar() {
@@ -277,19 +291,24 @@ public class ScriptConsolePanel extends JPanel {
     }
 
     private void runScript() {
-        if (engines.isEmpty()) return;
+        if (engines.isEmpty()) {
+            return;
+        }
+
         String source = editorArea.getText().trim();
-        if (source.isEmpty()) return;
+        if (source.isEmpty()) {
+            return;
+        }
 
         addToHistory(source);
 
-        int engineIdx = engineSelector != null ? engineSelector.getSelectedIndex() : 0;
-        JbmScriptEngine engine = engines.get(engineIdx < engines.size() ? engineIdx : 0);
+        int engineIndex = engineSelector != null ? engineSelector.getSelectedIndex() : 0;
+        JbmScriptEngine engine = engines.get(Math.min(engineIndex, engines.size() - 1));
 
         if (jbm.getJarArchive() != null) {
             engine.bindContext(jbm.getJarArchive().getClasses(), jbm);
         } else {
-            engine.setVariable("classes", new java.util.HashMap<>());
+            engine.setVariable("classes", new HashMap<>());
             engine.setVariable("jbm", jbm);
             engine.setVariable("asm", org.objectweb.asm.Opcodes.class);
         }
@@ -307,6 +326,7 @@ public class ScriptConsolePanel extends JPanel {
                     public void println(String x) {
                         publish(x + "\n");
                     }
+
                     @Override
                     public void print(String x) {
                         publish(x);
@@ -314,6 +334,7 @@ public class ScriptConsolePanel extends JPanel {
                 };
                 System.setOut(captureStream);
                 System.setErr(captureStream);
+
                 try {
                     return engine.eval(source);
                 } finally {
@@ -340,7 +361,10 @@ public class ScriptConsolePanel extends JPanel {
                     Main.INSTANCE.getLogger().log("Script executed successfully.");
                 } catch (Exception ex) {
                     Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
-                    appendOutput("[ERROR] " + cause.getClass().getSimpleName() + ": " + cause.getMessage() + "\n", errorStyle);
+                    appendOutput(
+                            "[ERROR] " + cause.getClass().getSimpleName() + ": " + cause.getMessage() + "\n",
+                            errorStyle
+                    );
                     Main.INSTANCE.getLogger().err("Script error: " + cause.getMessage());
                 }
             }
@@ -353,30 +377,35 @@ public class ScriptConsolePanel extends JPanel {
             try {
                 outputDoc.insertString(outputDoc.getLength(), text, style);
                 outputPane.setCaretPosition(outputDoc.getLength());
-            } catch (BadLocationException ignored) {}
+            } catch (BadLocationException ignored) {
+            }
         });
     }
 
     private void clearOutput() {
         try {
             outputDoc.remove(0, outputDoc.getLength());
-        } catch (BadLocationException ignored) {}
+        } catch (BadLocationException ignored) {
+        }
     }
 
     private void addToHistory(String source) {
-        if (!history.isEmpty() && history.get(history.size() - 1).equals(source)) return;
+        if (!history.isEmpty() && history.get(history.size() - 1).equals(source)) {
+            return;
+        }
         history.add(source);
-        if (history.size() > MAX_HISTORY) history.remove(0);
+        if (history.size() > MAX_HISTORY) {
+            history.remove(0);
+        }
         historyIndex = history.size();
     }
 
     private void navigateHistory(int direction) {
-        if (history.isEmpty()) return;
+        if (history.isEmpty()) {
+            return;
+        }
         historyIndex = Math.max(0, Math.min(history.size() - 1, historyIndex + direction));
         editorArea.setText(history.get(historyIndex));
-    }
-
-    private void redirectSystemOut() {
     }
 
     public void focusEditor() {

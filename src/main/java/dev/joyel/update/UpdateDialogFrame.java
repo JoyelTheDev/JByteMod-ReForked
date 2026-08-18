@@ -3,13 +3,10 @@ package dev.joyel.update;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.net.URI;
 
 public final class UpdateDialogFrame extends JDialog {
-
     private UpdateDialogFrame(UpdateRelease release) {
         super((Frame) null, "Update Available \u2013 " + release.getVersion(), true);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -17,73 +14,109 @@ public final class UpdateDialogFrame extends JDialog {
         setLocationRelativeTo(null);
         setResizable(true);
 
-        JLabel titleLabel = new JLabel(
-                "<html><b>Version " + escapeHtml(release.getVersion()) + " is available!</b></html>");
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 14f));
-        titleLabel.setBorder(new EmptyBorder(0, 0, 8, 0));
+        JLabel titleLabel = createTitleLabel(release);
+        JScrollPane scrollPane = createChangelogScrollPane(release);
+        JButton downloadBtn = createDownloadButton(release);
+        JButton dismissBtn = createDismissButton();
+        JLabel urlLabel = createUrlLabel(release);
+        JPanel buttonPanel = createButtonPanel(urlLabel, dismissBtn, downloadBtn);
 
+        configureContentPane(titleLabel, scrollPane, buttonPanel);
+        configureKeyboardShortcuts();
+        getRootPane().setDefaultButton(downloadBtn);
+    }
+
+    public static void show(UpdateRelease release) {
+        SwingUtilities.invokeLater(() -> new UpdateDialogFrame(release).setVisible(true));
+    }
+
+    private JLabel createTitleLabel(UpdateRelease release) {
+        JLabel label = new JLabel(
+                "<html><b>Version " + escapeHtml(release.getVersion()) + " is available!</b></html>"
+        );
+        label.setFont(label.getFont().deriveFont(Font.BOLD, 14f));
+        label.setBorder(new EmptyBorder(0, 0, 8, 0));
+        return label;
+    }
+
+    private JScrollPane createChangelogScrollPane(UpdateRelease release) {
         JTextArea changelogArea = new JTextArea(release.getChangelog());
         changelogArea.setEditable(false);
         changelogArea.setLineWrap(true);
         changelogArea.setWrapStyleWord(true);
         changelogArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         changelogArea.setBackground(UIManager.getColor("TextArea.background"));
-        JScrollPane scroll = new JScrollPane(changelogArea);
-        scroll.setBorder(BorderFactory.createTitledBorder("Changelog"));
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
 
-        JButton downloadBtn = new JButton("Download");
-        downloadBtn.setFont(downloadBtn.getFont().deriveFont(Font.BOLD));
-        downloadBtn.setDefaultCapable(true);
-        downloadBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                openUrl(release.getUrl());
-                dispose();
-            }
+        JScrollPane scrollPane = new JScrollPane(changelogArea);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Changelog"));
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        return scrollPane;
+    }
+
+    private JButton createDownloadButton(UpdateRelease release) {
+        JButton button = new JButton("Download");
+        button.setFont(button.getFont().deriveFont(Font.BOLD));
+        button.setDefaultCapable(true);
+        button.addActionListener(e -> {
+            openUrl(release.getUrl());
+            dispose();
         });
+        return button;
+    }
 
-        JButton dismissBtn = new JButton("Dismiss");
-        dismissBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { dispose(); }
-        });
+    private JButton createDismissButton() {
+        JButton button = new JButton("Dismiss");
+        button.addActionListener(e -> dispose());
+        return button;
+    }
 
-        JLabel urlLabel = new JLabel(
-                "<html><font color='gray' size='2'>" + escapeHtml(release.getUrl()) + "</font></html>");
+    private JLabel createUrlLabel(UpdateRelease release) {
+        return new JLabel(
+                "<html><font color='gray' size='2'>" + escapeHtml(release.getUrl()) + "</font></html>"
+        );
+    }
 
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        btnPanel.add(urlLabel);
-        btnPanel.add(dismissBtn);
-        btnPanel.add(downloadBtn);
+    private JPanel createButtonPanel(JLabel urlLabel, JButton dismissBtn, JButton downloadBtn) {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
+        panel.add(urlLabel);
+        panel.add(dismissBtn);
+        panel.add(downloadBtn);
+        return panel;
+    }
 
+    private void configureContentPane(JLabel titleLabel, JScrollPane scrollPane, JPanel buttonPanel) {
         JPanel content = new JPanel(new BorderLayout(0, 6));
         content.setBorder(new EmptyBorder(12, 14, 10, 14));
         content.add(titleLabel, BorderLayout.NORTH);
-        content.add(scroll,     BorderLayout.CENTER);
-        content.add(btnPanel,   BorderLayout.SOUTH);
-
+        content.add(scrollPane, BorderLayout.CENTER);
+        content.add(buttonPanel, BorderLayout.SOUTH);
         setContentPane(content);
-        getRootPane().setDefaultButton(downloadBtn);
-        getRootPane().registerKeyboardAction(
-                new ActionListener() { public void actionPerformed(ActionEvent e) { dispose(); } },
-                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
-                JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
-    public static void show(UpdateRelease release) {
-        new UpdateDialogFrame(release).setVisible(true);
+    private void configureKeyboardShortcuts() {
+        getRootPane().registerKeyboardAction(
+                e -> dispose(),
+                KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0),
+                JComponent.WHEN_IN_FOCUSED_WINDOW
+        );
     }
 
     private static void openUrl(String url) {
         try {
-            if (Desktop.isDesktopSupported()
-                    && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            if (Desktop.isDesktopSupported() &&
+                Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
                 Desktop.getDesktop().browse(new URI(url));
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
-    private static String escapeHtml(String s) {
-        if (s == null) return "";
-        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    private static String escapeHtml(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replace("&", "&amp;")
+                   .replace("<", "&lt;")
+                   .replace(">", "&gt;");
     }
 }
