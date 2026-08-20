@@ -21,18 +21,31 @@ public final class InstructionPatternMatch {
         this.formattedInstructions = formattedInstructions;
     }
 
-    public ClassNode getOwnerClass() { return ownerClass; }
-    public MethodNode getMethod() { return method; }
-    public List<AbstractInsnNode> getInstructions() { return instructions; }
-    public String getFormattedInstructions() { return formattedInstructions; }
+    public ClassNode getOwnerClass() {
+        return ownerClass;
+    }
+
+    public MethodNode getMethod() {
+        return method;
+    }
+
+    public List<AbstractInsnNode> getInstructions() {
+        return instructions;
+    }
+
+    public String getFormattedInstructions() {
+        return formattedInstructions;
+    }
 
     public AbstractInsnNode getFirstInstruction() {
         return instructions.isEmpty() ? null : instructions.get(0);
     }
 
     public AbstractInsnNode getNavigationInstruction() {
-        for (AbstractInsnNode insn : instructions) {
-            if (insn.getOpcode() >= 0) return insn;
+        for (AbstractInsnNode instruction : instructions) {
+            if (instruction.getOpcode() >= 0) {
+                return instruction;
+            }
         }
         return getFirstInstruction();
     }

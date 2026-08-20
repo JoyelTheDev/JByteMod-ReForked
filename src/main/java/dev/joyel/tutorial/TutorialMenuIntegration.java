@@ -11,10 +11,6 @@ public final class TutorialMenuIntegration {
 
     private TutorialMenuIntegration() {}
 
-    /**
-     * Finds the existing "Help" menu in the menu bar and appends Tutorial items.
-     * Falls back to creating a new Help menu if not found.
-     */
     public static void installInto(JMenuBar menuBar, JByteMod jbm) {
         JMenu helpMenu = findOrCreateHelpMenu(menuBar);
 

@@ -1,7 +1,10 @@
 package dev.joyel.pattern;
 
 public final class PatternDiagnostic {
-    public enum Severity { ERROR, WARNING }
+    public enum Severity {
+        ERROR,
+        WARNING
+    }
 
     private final int line;
     private final int column;
@@ -15,8 +18,19 @@ public final class PatternDiagnostic {
         this.message = message;
     }
 
-    public int line() { return line; }
-    public int column() { return column; }
-    public Severity severity() { return severity; }
-    public String message() { return message; }
+    public int line() {
+        return line;
+    }
+
+    public int column() {
+        return column;
+    }
+
+    public Severity severity() {
+        return severity;
+    }
+
+    public String message() {
+        return message;
+    }
 }

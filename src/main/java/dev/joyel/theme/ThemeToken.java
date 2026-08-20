@@ -15,11 +15,25 @@ public final class ThemeToken {
         this.color = defaultColor;
     }
 
-    public String getKey() { return key; }
-    public String getLabel() { return label; }
-    public ThemeColorCategory getCategory() { return category; }
-    public Color getColor() { return color; }
-    public void setColor(Color color) { this.color = color; }
+    public String getKey() {
+        return key;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public ThemeColorCategory getCategory() {
+        return category;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
 
     public String toHex() {
         return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
