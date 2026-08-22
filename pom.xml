@@ -54,18 +54,16 @@
 			<artifactId>rsyntaxtextarea</artifactId>
 			<version>4.0.1</version>
 		</dependency>
-
+      <dependency>
+         <groupId>com.google.code.gson</groupId>
+         <artifactId>gson</artifactId>
+         <version>2.10.1</version>
+      </dependency>
 		<dependency>
 			<groupId>com.jagrosh</groupId>
 			<artifactId>DiscordIPC</artifactId>
 			<version>0.6.1</version>
 		</dependency>
-
-		<!--		<dependency>-->
-		<!--			<groupId>org.bitbucket.mstrobel</groupId>-->
-		<!--			<artifactId>procyon-core</artifactId>-->
-		<!--			<version>0.5.36</version>-->
-		<!--		</dependency>-->
 		<dependency>
 			<groupId>org.bitbucket.mstrobel</groupId>
 			<artifactId>procyon-core</artifactId>
