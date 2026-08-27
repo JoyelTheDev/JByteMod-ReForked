@@ -21,7 +21,7 @@ public final class ConstantTracker extends Interpreter<ConstantValue> implements
             "java/lang/StringBuilder", "java/lang/StringBuffer"
     );
 
-    private final BasicInterpreter basic = new BasicInterpreter(ASM9);
+    private final BasicInterpreter basic = new BasicInterpreter();
     private final Object[] args;
 
     public ConstantTracker() {
