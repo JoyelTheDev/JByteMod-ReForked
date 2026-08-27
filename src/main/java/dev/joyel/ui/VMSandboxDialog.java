@@ -1,11 +1,8 @@
 package dev.joyel.ui;
 
-import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import dev.joyel.vm.VM;
 import dev.joyel.vm.VMRunner;
-import me.grax.jbytemod.utils.ErrorDisplay;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -237,7 +234,7 @@ public class VMSandboxDialog extends JDialog {
     }
 
     private Object[] parseArgs(String raw, String desc) {
-        Type[] argTypes = Type.getArgumentTypes(desc);
+        org.objectweb.asm.Type[] argTypes = org.objectweb.asm.Type.getArgumentTypes(desc);
         if (argTypes.length == 0) return new Object[0];
 
         String[] lines = raw.isEmpty()
@@ -256,20 +253,16 @@ public class VMSandboxDialog extends JDialog {
         return args;
     }
 
-    private Object parseSingleArg(String token, Type type) {
+    private Object parseSingleArg(String token, org.objectweb.asm.Type type) {
         switch (type.getSort()) {
-            case Type.INT:
-                return Integer.parseInt(token);
-            case Type.LONG:
+            case org.objectweb.asm.Type.INT:     return Integer.parseInt(token);
+            case org.objectweb.asm.Type.LONG:
                 return Long.parseLong(token.endsWith("L") || token.endsWith("l")
                         ? token.substring(0, token.length() - 1) : token);
-            case Type.FLOAT:
-                return Float.parseFloat(token);
-            case Type.DOUBLE:
-                return Double.parseDouble(token);
-            case Type.BOOLEAN:
-                return Boolean.parseBoolean(token);
-            case Type.OBJECT:
+            case org.objectweb.asm.Type.FLOAT:   return Float.parseFloat(token);
+            case org.objectweb.asm.Type.DOUBLE:  return Double.parseDouble(token);
+            case org.objectweb.asm.Type.BOOLEAN: return Boolean.parseBoolean(token);
+            case org.objectweb.asm.Type.OBJECT:
                 if (type.getClassName().equals("java.lang.String")) {
                     if (token.startsWith("\"") && token.endsWith("\"") && token.length() >= 2) {
                         return token.substring(1, token.length() - 1);
