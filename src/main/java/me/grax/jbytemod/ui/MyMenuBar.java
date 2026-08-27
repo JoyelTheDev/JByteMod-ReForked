@@ -24,6 +24,7 @@ import me.grax.jbytemod.utils.DeobfusacteUtils;
 import me.grax.jbytemod.utils.ErrorDisplay;
 import me.grax.jbytemod.utils.TextUtils;
 import me.grax.jbytemod.utils.attach.AttachUtils;
+import dev.joyel.deobf.ui.DeobfMenuIntegration;
 import me.grax.jbytemod.utils.gui.LookUtils;
 import me.grax.jbytemod.utils.list.LazyListModel;
 import me.grax.jbytemod.ui.xref.XrefStatsFrame;
@@ -66,6 +67,7 @@ public class MyMenuBar extends JMenuBar {
         HierarchyMenuIntegration.installInto(this, jam);
         ConstantPoolMenuIntegration.installInto(this, jam);
         TutorialMenuIntegration.installInto(this, jam);
+        DeobfMenuIntegration.installInto(this, jam);
     }
 
     private void initEditMenu() {
