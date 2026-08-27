@@ -7,6 +7,7 @@ import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.plugin.Plugin;
 import de.xbrowniecodez.jbytemod.ui.StringDecryptorDialog;
+import dev.joyel.ui.VMSandboxDialog;
 import dev.joyel.constpool.ConstantPoolMenuIntegration;
 import dev.joyel.hierarchy.HierarchyMenuIntegration;
 import dev.joyel.methodgraph.MethodGraphMenuIntegration;
@@ -65,7 +66,6 @@ public class MyMenuBar extends JMenuBar {
         HierarchyMenuIntegration.installInto(this, jam);
         ConstantPoolMenuIntegration.installInto(this, jam);
         TutorialMenuIntegration.installInto(this, jam);
-        
     }
 
     private void initEditMenu() {
@@ -550,6 +550,17 @@ public class MyMenuBar extends JMenuBar {
         });
         deobfTools.add(stringDecryptor);
 
+        JMenuItem vmSandbox = new JMenuItem("VM Sandbox...");
+        vmSandbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (jbm.getJarArchive() != null && jbm.getJarArchive().getClasses() != null) {
+                    VMSandboxDialog.open(jbm);
+                } else { canNotFindFile(); }
+            }
+        });
+        deobfTools.add(vmSandbox);
+
         this.add(getSettings());
         JMenu help = new JMenu(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("help"));
         JMenuItem about = new JMenuItem(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("about"));
@@ -761,7 +772,7 @@ public class MyMenuBar extends JMenuBar {
         }
     }
 
-        protected void openScriptConsole() {
+    protected void openScriptConsole() {
         if (jbm.getTabbedPane() == null) return;
         JTabbedPane tp = jbm.getTabbedPane();
         for (int i = 0; i < tp.getTabCount(); i++) {
@@ -776,7 +787,7 @@ public class MyMenuBar extends JMenuBar {
         }
     }
 
-        protected void openGlobalSearch() {
+    protected void openGlobalSearch() {
         if (jbm.getTabbedPane() == null) return;
         JTabbedPane tp = jbm.getTabbedPane();
         for (int i = 0; i < tp.getTabCount(); i++) {
@@ -791,7 +802,7 @@ public class MyMenuBar extends JMenuBar {
         }
     }
 
-        protected void searchLDC() {
+    protected void searchLDC() {
         final JPanel panel = new JPanel(new BorderLayout(5, 5));
         final JPanel input = new JPanel(new GridLayout(0, 1));
         final JPanel labels = new JPanel(new GridLayout(0, 1));
