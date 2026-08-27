@@ -1,4 +1,4 @@
-package de.xbrowniecodez.jbytemod.vm;
+package dev.joyel.vm;
 
 import de.xbrowniecodez.jbytemod.Main;
 import org.objectweb.asm.Type;
