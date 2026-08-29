@@ -13,8 +13,11 @@ public final class PatternMenuIntegration {
         JMenu menu = new JMenu("Pattern");
         menu.setMnemonic(KeyEvent.VK_P);
 
+        JMenuItem panelItem = new JMenuItem("JarWide Pattern Search");
+        panelItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK));
+        panelItem.addActionListener(e -> jbm.getTabbedPane().openPatternSearch(null));
+
         JMenuItem searchItem = new JMenuItem("Pattern Search...");
-        searchItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK));
         searchItem.addActionListener(e -> {
             PatternSearchDialog dlg = new PatternSearchDialog(jbm);
             dlg.setVisible(true);
@@ -30,7 +33,9 @@ public final class PatternMenuIntegration {
         JMenuItem helpItem = new JMenuItem("Pattern Syntax Help");
         helpItem.addActionListener(e -> showHelp(jbm));
 
+        menu.add(panelItem);
         menu.add(searchItem);
+        menu.addSeparator();
         menu.add(replaceItem);
         menu.addSeparator();
         menu.add(helpItem);

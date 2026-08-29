@@ -29,6 +29,7 @@ public final class PatternSearchDialog extends JDialog {
     private final JButton searchButton;
     private final JButton cancelButton;
     private final JButton searchReplaceButton;
+    private final JButton openInPanelButton;
     private final JCheckBox includeMetadata;
     private final DefaultListModel<InstructionPatternMatch> resultModel = new DefaultListModel<>();
     private final JList<InstructionPatternMatch> resultList;
@@ -73,6 +74,10 @@ public final class PatternSearchDialog extends JDialog {
 
         searchReplaceButton = new JButton("Search & Replace...");
         searchReplaceButton.addActionListener(e -> openReplace());
+
+        openInPanelButton = new JButton("Open in Panel");
+        openInPanelButton.setToolTipText("Send this pattern to the jar-wide Pattern Search panel");
+        openInPanelButton.addActionListener(e -> openInPanel());
 
         progressBar = new JProgressBar(0, 100);
         progressBar.setStringPainted(true);
@@ -128,6 +133,7 @@ public final class PatternSearchDialog extends JDialog {
         controls.add(searchButton);
         controls.add(cancelButton);
         controls.add(searchReplaceButton);
+        controls.add(openInPanelButton);
         controls.add(new JSeparator(SwingConstants.VERTICAL));
         controls.add(includeMetadata);
 
@@ -255,6 +261,12 @@ public final class PatternSearchDialog extends JDialog {
             jbm.getCodeList().setSelectedIndex(idx);
             jbm.getCodeList().ensureIndexIsVisible(idx);
         }
+    }
+
+    private void openInPanel() {
+        String text = patternArea.getText();
+        dispose();
+        jbm.getTabbedPane().openPatternSearch(text);
     }
 
     private void openReplace() {

@@ -3,6 +3,7 @@ package me.grax.jbytemod.ui;
 import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.ui.lists.SearchList;
+import dev.joyel.pattern.ui.JarWidePatternSearchPanel;
 import dev.joyel.search.GlobalSearchPanel;
 import dev.joyel.ui.metrics.MetricsPanel;
 import dev.joyel.ui.script.ScriptConsolePanel;
@@ -20,6 +21,7 @@ import java.awt.event.MouseEvent;
 
 public class MyTabbedPane extends JTabbedPane {
     private MyEditorTab editorTab;
+    private JarWidePatternSearchPanel patternSearchPanel;
 
     public MyTabbedPane(JByteMod jbm) {
         this.editorTab = new MyEditorTab(jbm);
@@ -30,6 +32,8 @@ public class MyTabbedPane extends JTabbedPane {
         this.addTab(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("search"), this.withBorder(search, searchList));
         GlobalSearchPanel globalSearchPanel = new GlobalSearchPanel(jbm);
         this.addTab("Global Search", globalSearchPanel);
+        this.patternSearchPanel = new JarWidePatternSearchPanel(jbm);
+        this.addTab("Pattern Search", this.patternSearchPanel);
         ScriptConsolePanel scriptConsolePanel = new ScriptConsolePanel(jbm);
         this.addTab("Script Console", scriptConsolePanel);
         MetricsPanel metricsPanel = new MetricsPanel(jbm);
@@ -79,6 +83,14 @@ public class MyTabbedPane extends JTabbedPane {
 
     public void selectClass(ClassNode cn) {
         this.editorTab.selectClass(cn);
+    }
+
+    public void openPatternSearch(String prefilledPattern) {
+        int idx = indexOfTab("Pattern Search");
+        if (idx >= 0) setSelectedIndex(idx);
+        if (prefilledPattern != null && !prefilledPattern.isEmpty()) {
+            patternSearchPanel.setPattern(prefilledPattern);
+        }
     }
 
     public MyEditorTab getEditorTab() {
