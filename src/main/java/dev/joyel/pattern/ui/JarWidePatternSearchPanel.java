@@ -41,7 +41,7 @@ public final class JarWidePatternSearchPanel extends JPanel {
 
     private InstructionPatternCompiler.Compilation compilation;
     private PatternSearchSession session;
-    private Timer advanceTimer;
+    private javax.swing.Timer advanceTimer;
     private boolean resultsPopulated;
 
     public JarWidePatternSearchPanel(JByteMod jbm) {
@@ -230,7 +230,7 @@ public final class JarWidePatternSearchPanel extends JPanel {
         statusLabel.setText("Searching...");
         matchCountLabel.setText(" ");
 
-        advanceTimer = new Timer((int) SWING_TIMER_MS, e -> advanceSearch());
+        advanceTimer = new javax.swing.Timer((int) SWING_TIMER_MS, e -> advanceSearch());
         advanceTimer.start();
     }
 
