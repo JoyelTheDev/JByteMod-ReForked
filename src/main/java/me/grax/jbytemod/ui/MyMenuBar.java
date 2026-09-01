@@ -31,7 +31,6 @@ import me.grax.jbytemod.xref.XrefManager;
 import dev.joyel.tutorial.TutorialMenuIntegration;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.tree.*;
-import com.sun.tools.attach.AttachProvider;
 
 import javax.swing.*;
 import dev.joyel.search.GlobalSearchPanel;
