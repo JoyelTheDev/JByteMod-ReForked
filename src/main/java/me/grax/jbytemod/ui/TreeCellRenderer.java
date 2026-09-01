@@ -82,7 +82,7 @@ public class TreeCellRenderer extends DefaultTreeCellRenderer implements Opcodes
                                                   final int row, final boolean hasFocus) {
         super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
         final DefaultMutableTreeNode n = (DefaultMutableTreeNode) value;
-        if (n instanceof SortedTreeNode sor__.isResource()) {
+        if (n instanceof SortedTreeNode stn && stn.isResource()) {
             this.setIcon(this.file);
             return this;
         }

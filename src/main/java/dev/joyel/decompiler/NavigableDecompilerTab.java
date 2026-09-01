@@ -102,17 +102,15 @@ public final class NavigableDecompilerTab extends JPanel {
         final String targetClass = cn.name;
 
         Thread runner = new Thread(() -> {
-                finalD.run();
-                SwingUtilities.invokeLater(() -> {
-                        String source = dp.getText();
-                        if (source != null && !source.isEmpty()
-                                && !source.startsWith("Loading")
-                                && !source.startsWith("Failed")) {
-                            dp.loadTokens(source, targetClass);
-                        }
-                    }
-                });
-            }
+            finalD.run();
+            SwingUtilities.invokeLater(() -> {
+                String source = dp.getText();
+                if (source != null && !source.isEmpty()
+                        && !source.startsWith("Loading")
+                        && !source.startsWith("Failed")) {
+                    dp.loadTokens(source, targetClass);
+                }
+            });
         }, "NavigableDecompiler-Worker");
         runner.setDaemon(true);
         runner.start();

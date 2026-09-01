@@ -642,8 +642,8 @@ public class DeobfusacteUtils {
                         }
                     }
                     if (prev == Integer.MIN_VALUE) {
-                        if (node instanceof LdcInsnNode ldc__.cst instanceof Integer) {
-                            prev = (Integer) ((LdcInsnNode) node).cst;
+                        if (node instanceof LdcInsnNode ldc && ldc.cst instanceof Integer) {
+                            prev = (Integer) ldc.cst;
                         }
                     }
                     if (prev != Integer.MIN_VALUE) {
@@ -687,8 +687,8 @@ public class DeobfusacteUtils {
                         }
                     }
                     if (prev == Integer.MIN_VALUE) {
-                        if (node instanceof LdcInsnNode ldc__.cst instanceof Integer) {
-                            prev = (Integer) ((LdcInsnNode) node).cst;
+                        if (node instanceof LdcInsnNode ldc && ldc.cst instanceof Integer) {
+                            prev = (Integer) ldc.cst;
                         }
                     }
                     if (prev != Integer.MIN_VALUE) {
