@@ -39,7 +39,7 @@ public class UpdateChecker {
 	
     private JsonObject fetchLatestReleaseInfo() {
         try {
-            URL url = URI.create("https://api.github.com/repos/JoyelTheDev/JByteMod-ReForked/releases/latest");
+            URL url = URI.create("https://api.github.com/repos/JoyelTheDev/JByteMod-ReForked/releases/latest").toURL();
             URLConnection connection = url.openConnection();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
