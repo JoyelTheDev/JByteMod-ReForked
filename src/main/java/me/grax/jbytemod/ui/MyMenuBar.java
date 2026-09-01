@@ -31,7 +31,7 @@ import me.grax.jbytemod.xref.XrefManager;
 import dev.joyel.tutorial.TutorialMenuIntegration;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.tree.*;
-import sun.tools.attach.WindowsAttachProvider;
+import com.sun.tools.attach.AttachProvider;
 
 import javax.swing.*;
 import dev.joyel.search.GlobalSearchPanel;
@@ -660,7 +660,7 @@ public class MyMenuBar extends JMenuBar {
 
     protected void openProcessSelection() {
         try {
-            List<VirtualMachineDescriptor> list = new WindowsAttachProvider().listVirtualMachines();
+            List<VirtualMachineDescriptor> list = VirtualMachine.list();
             VirtualMachine vm = null;
             if (list.isEmpty()) {
                 String pid = JOptionPane.showInputDialog(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("no_vm_found"));
