@@ -96,7 +96,7 @@ public class StringUtils {
      */
     public static boolean isPrimitive(String description) {
         String x = asmTrim(description);
-        if (x.length() == 0) {
+        if (x.isEmpty()) {
             return true;
         } else if (x.equals("Z") || x.equals("J") || x.equals("I") || x.equals("F") || x.equals("D") || x.equals("C") || x.equals("T") || x.equals("G")) {
             return true;

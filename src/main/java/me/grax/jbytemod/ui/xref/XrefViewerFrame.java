@@ -223,8 +223,7 @@ public class XrefViewerFrame extends JFrame {
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus,
                                                        int row, int col) {
-            if (value instanceof XrefKind) {
-                XrefKind kind = (XrefKind) value;
+            if (value instanceof XrefKind kind) {
                 setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
                 setIcon(new KindIcon(kind.getColor()));
                 setToolTipText(kind.getDisplayName());

@@ -326,7 +326,7 @@ public final class ThemeEditorDialog extends JDialog {
 
     private void saveAs() {
         String name = JOptionPane.showInputDialog(this, "Enter theme name:", "Save Theme As", JOptionPane.PLAIN_MESSAGE);
-        if (name == null || name.trim().isEmpty()) return;
+        if (name == null || name.isBlank()) return;
         name = name.trim();
         JByteTheme copy = editingTheme.deepCopy(name);
         if (!manager.addUserTheme(copy)) {

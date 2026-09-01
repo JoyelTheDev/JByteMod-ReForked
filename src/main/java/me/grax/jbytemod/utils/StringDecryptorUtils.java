@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.objectweb.asm.Opcodes.*;
 
+@SuppressWarnings("java:S3011")
 public class StringDecryptorUtils {
 
     public static int decryptStrings(Map<String, ClassNode> classes, String targetOwner, String targetName, String targetDesc, byte[] jarBytes) {
@@ -285,8 +286,7 @@ public class StringDecryptorUtils {
                 IntInsnNode iin = (IntInsnNode) ain;
                 if (iin.operand == 5) hasNewCharArray = true;
             }
-            if (ain instanceof MethodInsnNode) {
-                MethodInsnNode min = (MethodInsnNode) ain;
+            if (ain instanceof MethodInsnNode min) {
                 if (min.owner.equals("java/lang/String") && (min.name.equals("<init>") || min.name.equals("valueOf"))) {
                     hasStringConstruct = true;
                 }

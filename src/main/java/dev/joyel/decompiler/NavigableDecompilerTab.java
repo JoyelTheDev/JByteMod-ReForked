@@ -101,11 +101,9 @@ public final class NavigableDecompilerTab extends JPanel {
         final Decompiler finalD = d;
         final String targetClass = cn.name;
 
-        Thread runner = new Thread(new Runnable() {
-            public void run() {
+        Thread runner = new Thread(() -> {
                 finalD.run();
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
+                SwingUtilities.invokeLater(() -> {
                         String source = dp.getText();
                         if (source != null && !source.isEmpty()
                                 && !source.startsWith("Loading")

@@ -486,8 +486,7 @@ public class ClassDialogue {
                 this.type = f.getType().getComponentType();
             } else {
                 java.lang.reflect.Type type = f.getGenericType();
-                if (type instanceof ParameterizedType) {
-                    ParameterizedType pType = (ParameterizedType) type;
+                if (type instanceof ParameterizedType pType) {
                     this.type = (Class<?>) pType.getActualTypeArguments()[0];
                 } else {
                     this.type = Object.class;

@@ -68,7 +68,7 @@ public class BlockVertex {
                 //text += ExceptionUtilities.getStackTraceString(e);
             }
         }
-        if (text.trim().isEmpty()) {
+        if (text.isBlank()) {
             for (AbstractInsnNode ain : code) {
                 text += InstrUtils.toString(ain) + "\n";
             }

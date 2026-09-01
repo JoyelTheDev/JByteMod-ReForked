@@ -67,12 +67,10 @@ public final class HierarchyMenuIntegration {
             return;
         }
         HierarchyManager.getInstance().clear();
-        HierarchyManager.getInstance().buildAsync(jbm.getJarArchive(), new Runnable() {
-            public void run() {
+        HierarchyManager.getInstance().buildAsync(jbm.getJarArchive(), () -> {
                 JOptionPane.showMessageDialog(jbm,
                         "Hierarchy index rebuilt.",
                         "Hierarchy", JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
+            });
     }
 }

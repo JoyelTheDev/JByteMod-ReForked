@@ -69,8 +69,7 @@ public final class XrefMap {
         for (AbstractInsnNode insn : mn.instructions) {
             if (insn.getOpcode() < Opcodes.NOP) continue;
 
-            if (insn instanceof MethodInsnNode) {
-                MethodInsnNode min = (MethodInsnNode) insn;
+            if (insn instanceof MethodInsnNode min) {
                 XrefAccessType access = XrefAccessType.EXECUTE;
                 String opName = Printer.OPCODES[insn.getOpcode()];
                 MemberKey key = new MemberKey(min.owner, min.name, min.desc);
@@ -79,8 +78,7 @@ public final class XrefMap {
                 addClassRef(min.owner, new XrefEntry(
                         XrefKind.INVOKE, access, opName, whereText, cn, mn));
 
-            } else if (insn instanceof FieldInsnNode) {
-                FieldInsnNode fin = (FieldInsnNode) insn;
+            } else if (insn instanceof FieldInsnNode fin) {
                 XrefAccessType access = (insn.getOpcode() == Opcodes.PUTFIELD
                         || insn.getOpcode() == Opcodes.PUTSTATIC)
                         ? XrefAccessType.WRITE : XrefAccessType.READ;
@@ -91,16 +89,14 @@ public final class XrefMap {
                 addClassRef(fin.owner, new XrefEntry(
                         XrefKind.FIELD, access, opName, whereText, cn, mn));
 
-            } else if (insn instanceof TypeInsnNode) {
-                TypeInsnNode tin = (TypeInsnNode) insn;
+            } else if (insn instanceof TypeInsnNode tin) {
                 String opName = Printer.OPCODES[insn.getOpcode()];
                 String rawDesc = tin.desc;
                 String internalName = rawDesc.startsWith("[") ? stripArrayPrefix(rawDesc) : rawDesc;
                 addClassRef(internalName, new XrefEntry(
                         XrefKind.TYPE, XrefAccessType.READ, opName, whereText, cn, mn));
 
-            } else if (insn instanceof LdcInsnNode) {
-                LdcInsnNode ldc = (LdcInsnNode) insn;
+            } else if (insn instanceof LdcInsnNode ldc) {
                 if (ldc.cst instanceof Type && ((Type) ldc.cst).getSort() == Type.OBJECT) {
                     addClassRef(((Type) ldc.cst).getInternalName(), new XrefEntry(
                             XrefKind.LITERAL, XrefAccessType.READ, ".class", whereText, cn, mn));

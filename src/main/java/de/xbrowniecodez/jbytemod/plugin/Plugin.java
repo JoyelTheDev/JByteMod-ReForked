@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.MethodNode;
 
 import javax.swing.*;
 import java.util.Map;
+
 @Getter
 @Setter
 public abstract class Plugin {
@@ -22,6 +23,8 @@ public abstract class Plugin {
     }
 
     public abstract void init();
+
+    public void shutdown() {}
 
     public abstract void loadFile(Map<String, ClassNode> map);
 
@@ -52,5 +55,4 @@ public abstract class Plugin {
     protected final MethodNode getSelectedMethod() {
         return Main.INSTANCE.getJByteMod().getCurrentMethod();
     }
-
 }

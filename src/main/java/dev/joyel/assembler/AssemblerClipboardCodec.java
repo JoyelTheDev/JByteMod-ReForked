@@ -79,13 +79,11 @@ public final class AssemblerClipboardCodec {
 
     private static String formatInstruction(AbstractInsnNode insn, LabelNames labels) {
         if (insn instanceof LabelNode) return "label " + quote(labels.name((LabelNode) insn));
-        if (insn instanceof FrameNode) {
-            FrameNode f = (FrameNode) insn;
+        if (insn instanceof FrameNode f) {
             return "frame " + frameTypeName(f.type) + " " + formatFrameValues(f.local, labels)
                     + " " + formatFrameValues(f.stack, labels);
         }
-        if (insn instanceof LineNumberNode) {
-            LineNumberNode l = (LineNumberNode) insn;
+        if (insn instanceof LineNumberNode l) {
             return "line " + l.line + " " + quote(labels.name(l.start));
         }
 
@@ -94,42 +92,35 @@ public final class AssemblerClipboardCodec {
         if (insn instanceof IntInsnNode) return opcode + " " + ((IntInsnNode) insn).operand;
         if (insn instanceof VarInsnNode) return opcode + " " + ((VarInsnNode) insn).var;
         if (insn instanceof TypeInsnNode) return opcode + " " + quote(((TypeInsnNode) insn).desc);
-        if (insn instanceof FieldInsnNode) {
-            FieldInsnNode f = (FieldInsnNode) insn;
+        if (insn instanceof FieldInsnNode f) {
             return opcode + " " + quote(f.owner) + " " + quote(f.name) + " " + quote(f.desc);
         }
-        if (insn instanceof MethodInsnNode) {
-            MethodInsnNode m = (MethodInsnNode) insn;
+        if (insn instanceof MethodInsnNode m) {
             return opcode + " " + quote(m.owner) + " " + quote(m.name) + " " + quote(m.desc) + " " + m.itf;
         }
-        if (insn instanceof InvokeDynamicInsnNode) {
-            InvokeDynamicInsnNode d = (InvokeDynamicInsnNode) insn;
+        if (insn instanceof InvokeDynamicInsnNode d) {
             return opcode + " " + quote(d.name) + " " + quote(d.desc) + " "
                     + AssemblerValueCodec.format(d.bsm) + " " + AssemblerValueCodec.formatList(d.bsmArgs);
         }
         if (insn instanceof JumpInsnNode) return opcode + " " + quote(labels.name(((JumpInsnNode) insn).label));
         if (insn instanceof LdcInsnNode) return opcode + " " + AssemblerValueCodec.format(((LdcInsnNode) insn).cst);
-        if (insn instanceof IincInsnNode) {
-            IincInsnNode i = (IincInsnNode) insn;
+        if (insn instanceof IincInsnNode i) {
             return opcode + " " + i.var + " " + i.incr;
         }
-        if (insn instanceof TableSwitchInsnNode) {
-            TableSwitchInsnNode t = (TableSwitchInsnNode) insn;
+        if (insn instanceof TableSwitchInsnNode t) {
             StringBuilder sb = new StringBuilder(opcode).append(' ').append(t.min).append(' ').append(t.max)
                     .append(' ').append(quote(labels.name(t.dflt)));
             for (LabelNode l : t.labels) sb.append(' ').append(quote(labels.name(l)));
             return sb.toString();
         }
-        if (insn instanceof LookupSwitchInsnNode) {
-            LookupSwitchInsnNode l = (LookupSwitchInsnNode) insn;
+        if (insn instanceof LookupSwitchInsnNode l) {
             StringBuilder sb = new StringBuilder(opcode).append(' ').append(quote(labels.name(l.dflt)));
             for (int i = 0; i < l.keys.size(); i++) {
                 sb.append(' ').append(l.keys.get(i)).append(' ').append(quote(labels.name(l.labels.get(i))));
             }
             return sb.toString();
         }
-        if (insn instanceof MultiANewArrayInsnNode) {
-            MultiANewArrayInsnNode m = (MultiANewArrayInsnNode) insn;
+        if (insn instanceof MultiANewArrayInsnNode m) {
             return opcode + " " + quote(m.desc) + " " + m.dims;
         }
         throw new IllegalArgumentException("Unsupported instruction node " + insn.getClass().getName());
@@ -305,12 +296,10 @@ public final class AssemblerClipboardCodec {
     private static List<LabelNode> collectReferencedLabels(AbstractInsnNode insn) {
         List<LabelNode> refs = new ArrayList<LabelNode>();
         if (insn instanceof JumpInsnNode) refs.add(((JumpInsnNode) insn).label);
-        if (insn instanceof TableSwitchInsnNode) {
-            TableSwitchInsnNode t = (TableSwitchInsnNode) insn;
+        if (insn instanceof TableSwitchInsnNode t) {
             refs.add(t.dflt); refs.addAll(t.labels);
         }
-        if (insn instanceof LookupSwitchInsnNode) {
-            LookupSwitchInsnNode l = (LookupSwitchInsnNode) insn;
+        if (insn instanceof LookupSwitchInsnNode l) {
             refs.add(l.dflt); refs.addAll(l.labels);
         }
         if (insn instanceof LineNumberNode) refs.add(((LineNumberNode) insn).start);

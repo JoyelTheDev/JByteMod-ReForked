@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.MethodNode;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+@SuppressWarnings("java:S3011")
 public class VMRunner {
 
     private final Map<String, ClassNode> classes;

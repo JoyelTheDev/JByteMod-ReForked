@@ -60,8 +60,7 @@ public final class ConstantScanner {
             Object decoded = decodeConstInsn(op);
             if (decoded != null) addValue(decoded, cn, mn, null, out, false);
 
-        } else if (insn instanceof InvokeDynamicInsnNode) {
-            InvokeDynamicInsnNode dyn = (InvokeDynamicInsnNode) insn;
+        } else if (insn instanceof InvokeDynamicInsnNode dyn) {
             if (dyn.bsm != null) {
                 addValue(dyn.bsm, cn, mn, null, out, false);
             }
@@ -76,8 +75,7 @@ public final class ConstantScanner {
                 addValue(key, cn, mn, null, out, false);
             }
 
-        } else if (insn instanceof TableSwitchInsnNode) {
-            TableSwitchInsnNode ts = (TableSwitchInsnNode) insn;
+        } else if (insn instanceof TableSwitchInsnNode ts) {
             for (int v = ts.min; v <= ts.max; v++) {
                 addValue(v, cn, mn, null, out, false);
             }
@@ -148,20 +146,17 @@ public final class ConstantScanner {
         if (value instanceof Integer || value instanceof Short || value instanceof Byte) {
             return String.valueOf(((Number) value).intValue());
         }
-        if (value instanceof Type) {
-            Type t = (Type) value;
+        if (value instanceof Type t) {
             return t.getSort() == Type.METHOD
                     ? "method-type " + t.getDescriptor()
                     : t.getClassName() + ".class";
         }
-        if (value instanceof Handle) {
-            Handle h = (Handle) value;
+        if (value instanceof Handle h) {
             return h.getOwner() + "." + h.getName() + h.getDesc()
                     + " (" + handleTagName(h.getTag())
                     + (h.isInterface() ? ", interface" : "") + ")";
         }
-        if (value instanceof ConstantDynamic) {
-            ConstantDynamic cd = (ConstantDynamic) value;
+        if (value instanceof ConstantDynamic cd) {
             return cd.getName() + " : " + cd.getDescriptor();
         }
         return null;

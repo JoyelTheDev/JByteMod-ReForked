@@ -343,8 +343,7 @@ public class Conversion implements Opcodes {
                 if (name.equals("<init>")) {
                     if (stack.size() > 0) {
                         Expression e = stack.peek();
-                        if (e instanceof NewTypeExpression) {
-                            NewTypeExpression nte = (NewTypeExpression) e;
+                        if (e instanceof NewTypeExpression nte) {
                             nte.setInit(me);
                             return;
                         }
@@ -375,8 +374,7 @@ public class Conversion implements Opcodes {
             stack.push(new ValueExpression(VarType.LONG, cst));
         } else if (cst instanceof Double) {
             stack.push(new ValueExpression(VarType.DOUBLE, cst));
-        } else if (cst instanceof Type) {
-            Type t = (Type) cst;
+        } else if (cst instanceof Type t) {
             stack.push(new ClassTypeExpression(t.getClassName()));
         } else {
             throw new RuntimeException(cst.getClass().getName());

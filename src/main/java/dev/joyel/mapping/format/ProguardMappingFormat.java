@@ -95,7 +95,7 @@ public final class ProguardMappingFormat implements MappingFormat {
 
     private static String buildMethodDesc(String params, String retType) {
         StringBuilder sb = new StringBuilder("(");
-        if (!params.trim().isEmpty()) {
+        if (!params.isBlank()) {
             for (String p : params.split(",")) {
                 sb.append(typeToDesc(p.trim()));
             }

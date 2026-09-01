@@ -81,11 +81,9 @@ public final class HierarchyViewerFrame extends JFrame {
                     "Hierarchy", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        SwingUtilities.invokeLater(() -> {
                 new HierarchyViewerFrame(jbm, cn, mn).setVisible(true);
-            }
-        });
+            });
     }
 
     private void populate(ClassNode focusClass, MethodNode focusMethod) {
@@ -342,8 +340,7 @@ public final class HierarchyViewerFrame extends JFrame {
             setIcon(null);
             if (value instanceof DefaultMutableTreeNode) {
                 Object userObj = ((DefaultMutableTreeNode) value).getUserObject();
-                if (userObj instanceof ClassEntry) {
-                    ClassEntry entry = (ClassEntry) userObj;
+                if (userObj instanceof ClassEntry entry) {
                     ClassNode cn = entry.cn;
                     boolean isFocus = cn.name.equals(
                             jbm.getCurrentNode() != null ? jbm.getCurrentNode().name : "");

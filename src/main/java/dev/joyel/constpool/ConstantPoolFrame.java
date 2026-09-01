@@ -64,8 +64,8 @@ public final class ConstantPoolFrame extends JFrame {
             public void actionPerformed(ActionEvent e) { applyFilter(); }
         });
 
-        JButton scanBtn   = toolButton("Scan All",    new Runnable() { public void run() { startScan(); } });
-        JButton clearBtn  = toolButton("Clear",       new Runnable() { public void run() { clearResults(); } });
+        JButton scanBtn   = toolButton("Scan All",    () -> { startScan(); });
+        JButton clearBtn  = toolButton("Clear",       () -> { clearResults(); });
 
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
@@ -113,24 +113,20 @@ public final class ConstantPoolFrame extends JFrame {
     }
 
     public static void open(JByteMod jbm) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        SwingUtilities.invokeLater(() -> {
                 ConstantPoolFrame frame = new ConstantPoolFrame(jbm);
                 frame.setVisible(true);
                 frame.startScan();
-            }
-        });
+            });
     }
 
     public static void openWithQuery(JByteMod jbm, String query) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        SwingUtilities.invokeLater(() -> {
                 ConstantPoolFrame frame = new ConstantPoolFrame(jbm);
                 frame.setVisible(true);
                 frame.searchField.setText(query);
                 frame.startScan();
-            }
-        });
+            });
     }
 
     private void startScan() {

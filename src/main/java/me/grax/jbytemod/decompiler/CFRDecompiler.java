@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("java:S3011")
 public class CFRDecompiler extends Decompiler {
 
     public static final HashMap<String, String> options = new HashMap<>();

@@ -19,13 +19,11 @@ public final class AssemblerValueCodec {
         if (value instanceof Double) return "double(" + value + ")";
         if (value instanceof String) return "string(" + quote((String) value) + ")";
         if (value instanceof Type) return "type(" + quote(((Type) value).getDescriptor()) + ")";
-        if (value instanceof Handle) {
-            Handle h = (Handle) value;
+        if (value instanceof Handle h) {
             return "handle(" + handleTagName(h.getTag()) + ", " + quote(h.getOwner()) + ", "
                     + quote(h.getName()) + ", " + quote(h.getDesc()) + ", " + h.isInterface() + ")";
         }
-        if (value instanceof ConstantDynamic) {
-            ConstantDynamic cd = (ConstantDynamic) value;
+        if (value instanceof ConstantDynamic cd) {
             List<String> args = new ArrayList<String>();
             for (int i = 0; i < cd.getBootstrapMethodArgumentCount(); i++) {
                 args.add(format(cd.getBootstrapMethodArgument(i)));

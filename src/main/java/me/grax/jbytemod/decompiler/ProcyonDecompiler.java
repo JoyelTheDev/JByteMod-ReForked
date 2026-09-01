@@ -13,6 +13,7 @@ import org.objectweb.asm.tree.MethodNode;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 
+@SuppressWarnings("java:S3011")
 public class ProcyonDecompiler extends Decompiler {
 
     public ProcyonDecompiler(JByteMod jbm, DecompilerPanel dp) {

@@ -354,8 +354,7 @@ public final class JarWidePatternSearchPanel extends JPanel {
         Object userObj = node.getUserObject();
         if (userObj instanceof MatchResultNode) {
             navigateTo(((MatchResultNode) userObj).match, true);
-        } else if (userObj instanceof MethodResultNode) {
-            MethodResultNode mn = (MethodResultNode) userObj;
+        } else if (userObj instanceof MethodResultNode mn) {
             jbm.selectMethod(mn.classNode, mn.methodNode);
         } else if (userObj instanceof ClassResultNode) {
             jbm.selectClass(((ClassResultNode) userObj).classNode);

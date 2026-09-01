@@ -639,8 +639,7 @@ public class MyMenuBar extends JMenuBar {
                 }
                 rebuildXref.setEnabled(false);
                 rebuildXref.setText("Building...");
-                XrefManager.getInstance().buildAsync(jbm.getJarArchive(), new Runnable() {
-                    public void run() {
+                XrefManager.getInstance().buildAsync(jbm.getJarArchive(), () -> {
                         rebuildXref.setText("Rebuild Xref Index");
                         rebuildXref.setEnabled(true);
                         JOptionPane.showMessageDialog(jbm,
@@ -648,8 +647,7 @@ public class MyMenuBar extends JMenuBar {
                                         XrefManager.getInstance().getCurrentMap().getAllMemberRefs().size() + " member refs\n" +
                                         XrefManager.getInstance().getCurrentMap().getAllClassRefs().size() + " class refs",
                                 "Xref Index Ready", JOptionPane.INFORMATION_MESSAGE);
-                    }
-                });
+                    });
             }
         });
         xrefMenu.add(rebuildXref);

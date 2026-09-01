@@ -254,8 +254,7 @@ public class InsnEditDialogue extends ClassDialogue {
 
     @Override
     protected void addSpecialInputs(Object obj, JPanel leftText, JPanel rightInput) {
-        if (obj instanceof AbstractInsnNode) {
-            AbstractInsnNode ain = (AbstractInsnNode) obj;
+        if (obj instanceof AbstractInsnNode ain) {
             String[] arr = opc.get(ain.getClass().getSimpleName());
             if (arr != null) {
                 leftText.add(new JLabel("Opcode: "));
@@ -264,8 +263,7 @@ public class InsnEditDialogue extends ClassDialogue {
                 rightInput.add(wrap("opc", opcode));
             }
         }
-        if (obj instanceof FrameNode) {
-            FrameNode fn = (FrameNode) obj;
+        if (obj instanceof FrameNode fn) {
             leftText.add(new JLabel("Local / Stack: "));
             JButton edit = new JButton(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("edit"));
             edit.addActionListener(e -> {

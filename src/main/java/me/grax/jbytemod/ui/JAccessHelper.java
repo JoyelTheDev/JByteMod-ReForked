@@ -169,11 +169,9 @@ public class JAccessHelper extends JDialog {
     @Override
     public void setVisible(boolean b) {
         super.setVisible(b);
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        SwingUtilities.invokeLater(() -> {
                 requestFocusInWindow();
-            }
-        });
+            });
     }
 
     private class JAccCheckBox extends JCheckBox {

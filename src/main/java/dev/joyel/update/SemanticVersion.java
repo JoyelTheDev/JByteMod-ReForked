@@ -1,7 +1,6 @@
 package dev.joyel.update;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -9,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class SemanticVersion implements Comparable<SemanticVersion> {
+
     private static final Pattern VERSION_PATTERN = Pattern.compile(
             "^[vV]?(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)" +
             "(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?" +
@@ -29,81 +29,45 @@ public final class SemanticVersion implements Comparable<SemanticVersion> {
         this.patch = new BigInteger(matcher.group(3));
 
         String prereleaseText = matcher.group(4);
-        if (prereleaseText == null) {
-            this.prerelease = Collections.emptyList();
-        } else {
-            this.prerelease = Collections.unmodifiableList(
-                    new ArrayList<>(Arrays.asList(prereleaseText.split("\\.")))
-            );
-        }
+        this.prerelease = prereleaseText == null
+                ? Collections.emptyList()
+                : List.of(prereleaseText.split("\\."));
 
         StringBuilder sb = new StringBuilder()
                 .append(major).append('.').append(minor).append('.').append(patch);
-        if (prereleaseText != null) {
-            sb.append('-').append(prereleaseText);
-        }
+        if (prereleaseText != null) sb.append('-').append(prereleaseText);
         this.display = sb.toString();
     }
 
     public static SemanticVersion parse(String value) {
-        if (value == null) {
-            return null;
-        }
-        Matcher matcher = VERSION_PATTERN.matcher(value.trim());
+        if (value == null) return null;
+        Matcher matcher = VERSION_PATTERN.matcher(value.strip());
         return matcher.matches() ? new SemanticVersion(matcher) : null;
     }
 
-    public boolean isPrerelease() {
-        return !prerelease.isEmpty();
-    }
-
-    public BigInteger getMajor() {
-        return major;
-    }
-
-    public BigInteger getMinor() {
-        return minor;
-    }
-
-    public BigInteger getPatch() {
-        return patch;
-    }
+    public boolean isPrerelease() { return !prerelease.isEmpty(); }
+    public BigInteger getMajor() { return major; }
+    public BigInteger getMinor() { return minor; }
+    public BigInteger getPatch() { return patch; }
 
     @Override
     public int compareTo(SemanticVersion other) {
         int cmp = major.compareTo(other.major);
-        if (cmp != 0) {
-            return cmp;
-        }
-
+        if (cmp != 0) return cmp;
         cmp = minor.compareTo(other.minor);
-        if (cmp != 0) {
-            return cmp;
-        }
-
+        if (cmp != 0) return cmp;
         cmp = patch.compareTo(other.patch);
-        if (cmp != 0) {
-            return cmp;
-        }
+        if (cmp != 0) return cmp;
 
-        if (prerelease.isEmpty() && other.prerelease.isEmpty()) {
-            return 0;
-        }
-        if (prerelease.isEmpty()) {
-            return 1;
-        }
-        if (other.prerelease.isEmpty()) {
-            return -1;
-        }
+        if (prerelease.isEmpty() && other.prerelease.isEmpty()) return 0;
+        if (prerelease.isEmpty()) return 1;
+        if (other.prerelease.isEmpty()) return -1;
 
         int length = Math.min(prerelease.size(), other.prerelease.size());
         for (int i = 0; i < length; i++) {
             cmp = compareIdentifier(prerelease.get(i), other.prerelease.get(i));
-            if (cmp != 0) {
-                return cmp;
-            }
+            if (cmp != 0) return cmp;
         }
-
         return Integer.compare(prerelease.size(), other.prerelease.size());
     }
 
@@ -114,40 +78,25 @@ public final class SemanticVersion implements Comparable<SemanticVersion> {
         if (leftNumeric && rightNumeric) {
             return new BigInteger(left).compareTo(new BigInteger(right));
         }
+        if (leftNumeric != rightNumeric) return leftNumeric ? -1 : 1;
 
-        if (leftNumeric != rightNumeric) {
-            return leftNumeric ? -1 : 1;
+        Matcher lm = NUMBERED_IDENTIFIER.matcher(left);
+        Matcher rm = NUMBERED_IDENTIFIER.matcher(right);
+        if (lm.matches() && rm.matches() && lm.group(1).equals(rm.group(1))) {
+            int cmp = new BigInteger(lm.group(2)).compareTo(new BigInteger(rm.group(2)));
+            if (cmp != 0) return cmp;
         }
-
-        Matcher leftMatcher = NUMBERED_IDENTIFIER.matcher(left);
-        Matcher rightMatcher = NUMBERED_IDENTIFIER.matcher(right);
-
-        if (leftMatcher.matches() && rightMatcher.matches() &&
-            leftMatcher.group(1).equals(rightMatcher.group(1))) {
-            int cmp = new BigInteger(leftMatcher.group(2))
-                    .compareTo(new BigInteger(rightMatcher.group(2)));
-            if (cmp != 0) {
-                return cmp;
-            }
-        }
-
         return left.compareTo(right);
     }
 
     @Override
-    public String toString() {
-        return display;
-    }
+    public String toString() { return display; }
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (!(other instanceof SemanticVersion)) {
-            return false;
-        }
-        return compareTo((SemanticVersion) other) == 0;
+        if (this == other) return true;
+        if (!(other instanceof SemanticVersion sv)) return false;
+        return compareTo(sv) == 0;
     }
 
     @Override

@@ -43,8 +43,7 @@ public class JFrameList extends JDialog {
             locals.clear();
             for (int i = 0; i < lm.getSize(); i++) {
                 Object o = lm.getElementAt(i);
-                if (o instanceof IntType) {
-                    IntType p = (IntType) o;
+                if (o instanceof IntType p) {
                     locals.add(p.val);
                 } else {
                     locals.add(o);
@@ -54,8 +53,7 @@ public class JFrameList extends JDialog {
             stack.clear();
             for (int i = 0; i < lm.getSize(); i++) {
                 Object o = lm.getElementAt(i);
-                if (o instanceof IntType) {
-                    IntType p = (IntType) o;
+                if (o instanceof IntType p) {
                     stack.add(p.val);
                 } else {
                     stack.add(o);

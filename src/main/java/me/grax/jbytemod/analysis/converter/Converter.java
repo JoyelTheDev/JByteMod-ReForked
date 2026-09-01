@@ -61,8 +61,7 @@ public class Converter implements Opcodes {
         for (Block b : blocks) {
             AbstractInsnNode end = b.getEndNode();
             //only opc where it continues
-            if (end instanceof JumpInsnNode) {
-                JumpInsnNode jin = (JumpInsnNode) end;
+            if (end instanceof JumpInsnNode jin) {
                 ArrayList<Block> outputs = new ArrayList<>();
                 if (!correspBlock.containsKey(jin.label)) {
                     throw new RuntimeException("label not visited");

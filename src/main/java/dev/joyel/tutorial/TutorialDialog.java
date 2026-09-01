@@ -231,12 +231,10 @@ public final class TutorialDialog extends JDialog {
     }
 
     public static void open(JByteMod jbm) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        SwingUtilities.invokeLater(() -> {
                 TutorialDialog dlg = new TutorialDialog(jbm);
                 dlg.setVisible(true);
-            }
-        });
+            });
     }
 
     public static void openIfFirstTime(JByteMod jbm) {

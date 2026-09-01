@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.util.EmptyStackException;
 import java.util.Stack;
 
+@SuppressWarnings("java:S3011")
 public class JVMStack {
 
     private Stack<Expression> list;

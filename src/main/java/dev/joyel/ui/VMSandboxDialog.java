@@ -138,7 +138,7 @@ public class VMSandboxDialog extends JDialog {
             }
         }
 
-        Collections.sort(entries);
+        entries.sort(null);
         if (entries.isEmpty()) {
             log("No static methods found.");
         } else {

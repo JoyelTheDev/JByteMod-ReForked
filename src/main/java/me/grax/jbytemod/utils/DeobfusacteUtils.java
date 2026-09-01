@@ -476,15 +476,12 @@ public class DeobfusacteUtils {
                     Map<LabelNode, Integer> jumpCount = new HashMap<>();
                     for (int i = 0; i < methodNode.instructions.size(); i++) {
                         AbstractInsnNode node = methodNode.instructions.get(i);
-                        if (node instanceof JumpInsnNode) {
-                            JumpInsnNode cast = (JumpInsnNode) node;
+                        if (node instanceof JumpInsnNode cast) {
                             jumpCount.merge(cast.label, 1, Integer::sum);
-                        } else if (node instanceof TableSwitchInsnNode) {
-                            TableSwitchInsnNode cast = (TableSwitchInsnNode) node;
+                        } else if (node instanceof TableSwitchInsnNode cast) {
                             jumpCount.merge(cast.dflt, 1, Integer::sum);
                             cast.labels.forEach(l -> jumpCount.merge(l, 1, Integer::sum));
-                        } else if (node instanceof LookupSwitchInsnNode) {
-                            LookupSwitchInsnNode cast = (LookupSwitchInsnNode) node;
+                        } else if (node instanceof LookupSwitchInsnNode cast) {
                             jumpCount.merge(cast.dflt, 1, Integer::sum);
                             cast.labels.forEach(l -> jumpCount.merge(l, 1, Integer::sum));
                         }
@@ -645,14 +642,13 @@ public class DeobfusacteUtils {
                         }
                     }
                     if (prev == Integer.MIN_VALUE) {
-                        if (node instanceof LdcInsnNode && ((LdcInsnNode) node).cst instanceof Integer) {
+                        if (node instanceof LdcInsnNode ldc__.cst instanceof Integer) {
                             prev = (Integer) ((LdcInsnNode) node).cst;
                         }
                     }
                     if (prev != Integer.MIN_VALUE) {
                         AbstractInsnNode next = Utils.getNextFollowGoto(node);
-                        if (next instanceof TableSwitchInsnNode) {
-                            TableSwitchInsnNode cast = (TableSwitchInsnNode) next;
+                        if (next instanceof TableSwitchInsnNode cast) {
                             int index = prev - cast.min;
                             LabelNode go = null;
                             if (index >= 0 && index < cast.labels.size()) {
@@ -691,7 +687,7 @@ public class DeobfusacteUtils {
                         }
                     }
                     if (prev == Integer.MIN_VALUE) {
-                        if (node instanceof LdcInsnNode && ((LdcInsnNode) node).cst instanceof Integer) {
+                        if (node instanceof LdcInsnNode ldc__.cst instanceof Integer) {
                             prev = (Integer) ((LdcInsnNode) node).cst;
                         }
                     }
@@ -704,8 +700,7 @@ public class DeobfusacteUtils {
                                 next = Utils.getNextFollowGoto(next);
                                 if (next.getOpcode() == Opcodes.SWAP) {
                                     next = Utils.getNextFollowGoto(next);
-                                    if (next instanceof TableSwitchInsnNode) {
-                                        TableSwitchInsnNode cast = (TableSwitchInsnNode) next;
+                                    if (next instanceof TableSwitchInsnNode cast) {
                                         int index = prev - cast.min;
                                         LabelNode go = null;
                                         if (index >= 0 && index < cast.labels.size()) {

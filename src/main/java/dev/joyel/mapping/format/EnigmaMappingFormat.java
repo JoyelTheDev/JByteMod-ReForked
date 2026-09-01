@@ -25,7 +25,7 @@ public final class EnigmaMappingFormat implements MappingFormat {
         Deque<String> mappedClassStack = new ArrayDeque<String>();
 
         for (String raw : text.split("\\r?\\n")) {
-            if (raw.trim().isEmpty() || raw.trim().startsWith("#")) continue;
+            if (raw.isBlank() || raw.trim().startsWith("#")) continue;
 
             int indent = 0;
             while (indent < raw.length() && raw.charAt(indent) == '\t') indent++;

@@ -189,7 +189,7 @@ public final class HexEditorDialog extends JDialog {
     private void gotoOffset() {
         String input = JOptionPane.showInputDialog(this,
                 "Enter offset (decimal or 0x hex):", "Go to Offset", JOptionPane.PLAIN_MESSAGE);
-        if (input == null || input.trim().isEmpty()) return;
+        if (input == null || input.isBlank()) return;
         try {
             int offset = input.trim().startsWith("0x") || input.trim().startsWith("0X")
                     ? Integer.parseInt(input.trim().substring(2), 16)
@@ -207,7 +207,7 @@ public final class HexEditorDialog extends JDialog {
     private void findHex() {
         String input = JOptionPane.showInputDialog(this,
                 "Enter hex bytes to find (e.g. CA FE BA BE):", "Find Hex", JOptionPane.PLAIN_MESSAGE);
-        if (input == null || input.trim().isEmpty()) return;
+        if (input == null || input.isBlank()) return;
         byte[] needle;
         try {
             needle = parseHexBytes(input.trim());

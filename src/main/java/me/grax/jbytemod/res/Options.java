@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 
+@SuppressWarnings("java:S3011")
 public class Options {
     private final File propFile = new File(Utils.getWorkingDirectory(), "jbytemod-remastered.cfg");
 

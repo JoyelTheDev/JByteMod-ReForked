@@ -11,6 +11,7 @@ import java.lang.reflect.Constructor;
 import java.util.List;
 import java.util.Locale;
 
+@SuppressWarnings("java:S3011")
 public class AttachUtils {
     public static VirtualMachine getVirtualMachine(int pid) {
         if (VirtualMachine.list().size() > 0) {

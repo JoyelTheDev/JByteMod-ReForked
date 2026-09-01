@@ -115,10 +115,10 @@ public final class MethodGraphFrame extends JDialog {
         analysingLabel.setForeground(new Color(0x569cd6));
         analysingLabel.setVisible(false);
 
-        JButton fitBtn    = toolButton("Fit [F]", new Runnable() { public void run() { canvas.requestFit(); } });
-        JButton rootBtn   = toolButton("Root",    new Runnable() { public void run() { canvas.centerRoot(); } });
-        JButton resetBtn  = toolButton("Reset",   new Runnable() { public void run() { canvas.resetLayout(); } });
-        JButton rebuildBtn = toolButton("Rebuild", new Runnable() { public void run() { requestAnalysis(); } });
+        JButton fitBtn    = toolButton("Fit [F]", () -> { canvas.requestFit(); });
+        JButton rootBtn   = toolButton("Root",    () -> { canvas.centerRoot(); });
+        JButton resetBtn  = toolButton("Reset",   () -> { canvas.resetLayout(); });
+        JButton rebuildBtn = toolButton("Rebuild", () -> { requestAnalysis(); });
 
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
@@ -167,12 +167,10 @@ public final class MethodGraphFrame extends JDialog {
     }
 
     public static void open(JByteMod jbm, String owner, MethodNode method) {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        SwingUtilities.invokeLater(() -> {
                 MethodGraphFrame f = new MethodGraphFrame(jbm, owner, method);
                 f.setVisible(true);
-            }
-        });
+            });
     }
 
     private void requestAnalysis() {

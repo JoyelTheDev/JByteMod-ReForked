@@ -117,14 +117,11 @@ public final class MethodGraphAnalyzer {
         Map<MethodGraph.MethodKey, MutableLink> links = new LinkedHashMap<>();
         if (method.instructions == null) return Collections.emptyList();
         for (AbstractInsnNode insn : method.instructions) {
-            if (insn instanceof MethodInsnNode) {
-                MethodInsnNode m = (MethodInsnNode) insn;
+            if (insn instanceof MethodInsnNode m) {
                 addMethodLink(m.owner, m.name, m.desc, false, links);
-            } else if (insn instanceof InvokeDynamicInsnNode) {
-                InvokeDynamicInsnNode dyn = (InvokeDynamicInsnNode) insn;
+            } else if (insn instanceof InvokeDynamicInsnNode dyn) {
                 for (Object arg : dyn.bsmArgs) {
-                    if (arg instanceof Handle) {
-                        Handle h = (Handle) arg;
+                    if (arg instanceof Handle h) {
                         if (h.getDesc().startsWith("(")) {
                             addMethodLink(h.getOwner(), h.getName(), h.getDesc(), true, links);
                         }

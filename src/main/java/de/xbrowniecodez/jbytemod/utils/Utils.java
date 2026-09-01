@@ -24,35 +24,28 @@ public class Utils {
                 ioException.printStackTrace();
             }
         }
-
         return cachedProperties;
     }
 
     public File getWorkingDirectory() {
         String userHome = System.getProperty("user.home", ".");
-        String jbytePath = "JByteMod-Remastered/";
-        File workingDirectory;
-        switch (Objects.requireNonNull(OSUtil.getCurrentOS())) {
-            case WINDOWS:
-                String applicationData = System.getenv("APPDATA");
-                String folder = applicationData != null ? applicationData : userHome;
-                workingDirectory = new File(folder, jbytePath);
-                break;
-            case MAC:
-                workingDirectory = new File(userHome, "Library/Application Support/" + jbytePath);
-                break;
-            default:
-                workingDirectory = new File(userHome, jbytePath);
-                break;
-        }
+        String jbytePath = "JByteMod-ReForked/";
+        File workingDirectory = switch (Objects.requireNonNull(OSUtil.getCurrentOS())) {
+            case WINDOWS -> {
+                String appData = System.getenv("APPDATA");
+                yield new File(appData != null ? appData : userHome, jbytePath);
+            }
+            case MAC -> new File(userHome, "Library/Application Support/" + jbytePath);
+            default -> new File(userHome, jbytePath);
+        };
 
         if (!workingDirectory.exists()) {
-            if (!workingDirectory.mkdir()) {
-                 Main.INSTANCE.getLogger().err("Failed to create working directory!");
+            if (!workingDirectory.mkdirs()) {
+                Main.INSTANCE.getLogger().err("Failed to create working directory!");
                 return new File(".");
             }
         }
-         Main.INSTANCE.getLogger().log("Working directory " + workingDirectory);
+        Main.INSTANCE.getLogger().log("Working directory " + workingDirectory);
         return workingDirectory;
     }
 }

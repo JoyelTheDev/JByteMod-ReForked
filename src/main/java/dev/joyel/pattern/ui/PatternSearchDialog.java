@@ -279,8 +279,7 @@ public final class PatternSearchDialog extends JDialog {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean hasFocus) {
             super.getListCellRendererComponent(list, value, index, isSelected, hasFocus);
-            if (value instanceof InstructionPatternMatch) {
-                InstructionPatternMatch m = (InstructionPatternMatch) value;
+            if (value instanceof InstructionPatternMatch m) {
                 String formatted = m.getFormattedInstructions();
                 int nl = formatted.indexOf('\n');
                 String first = nl >= 0 ? formatted.substring(0, nl) : formatted;

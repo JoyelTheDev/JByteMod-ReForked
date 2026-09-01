@@ -2,6 +2,7 @@ package de.xbrowniecodez.jbytemod.utils.update;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -38,7 +39,7 @@ public class UpdateChecker {
 	
     private JsonObject fetchLatestReleaseInfo() {
         try {
-            URL url = new URL("https://api.github.com/repos/JoyelTheDev/JByteMod-ReForked/releases/latest");
+            URL url = URI.create("https://api.github.com/repos/JoyelTheDev/JByteMod-ReForked/releases/latest");
             URLConnection connection = url.openConnection();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);

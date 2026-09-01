@@ -213,8 +213,7 @@ public class VM extends ClassLoader implements Opcodes {
         for (int i = 0; i < mn.instructions.size(); i++) {
             AbstractInsnNode ain = mn.instructions.get(i);
 
-            if (ain instanceof MethodInsnNode) {
-                MethodInsnNode min = (MethodInsnNode) ain;
+            if (ain instanceof MethodInsnNode min) {
                 if (filter.test(min.owner, min.desc)) {
                     org.objectweb.asm.Type[] args = org.objectweb.asm.Type.getArgumentTypes(min.desc);
                     for (int j = args.length - 1; j >= 0; j--) {
@@ -228,8 +227,7 @@ public class VM extends ClassLoader implements Opcodes {
                     mn.instructions.set(min, nullPush(org.objectweb.asm.Type.getReturnType(min.desc)));
                 }
 
-            } else if (ain instanceof FieldInsnNode) {
-                FieldInsnNode fin = (FieldInsnNode) ain;
+            } else if (ain instanceof FieldInsnNode fin) {
                 if (filter.test(fin.owner, fin.desc)) {
                     org.objectweb.asm.Type type = org.objectweb.asm.Type.getType(fin.desc);
                     int op = fin.getOpcode();

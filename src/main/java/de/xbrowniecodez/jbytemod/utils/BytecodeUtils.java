@@ -152,13 +152,13 @@ public class BytecodeUtils implements Opcodes {
     public static boolean isFloatInsn(AbstractInsnNode insn) {
         int opcode = insn.getOpcode();
         return (opcode >= Opcodes.FCONST_0 && opcode <= Opcodes.FCONST_2)
-                || (insn instanceof LdcInsnNode && ((LdcInsnNode) insn).cst instanceof Float);
+                || (insn instanceof LdcInsnNode ldcInsnNode && ldcInsnNode.cst instanceof Float);
     }
 
     public static boolean isDoubleInsn(AbstractInsnNode insn) {
         int opcode = insn.getOpcode();
         return (opcode >= Opcodes.DCONST_0 && opcode <= Opcodes.DCONST_1)
-                || (insn instanceof LdcInsnNode && ((LdcInsnNode) insn).cst instanceof Double);
+                || (insn instanceof LdcInsnNode ldcInsnNode && ldcInsnNode.cst instanceof Double);
     }
 
     public static AbstractInsnNode getNumberInsn(int number) {
@@ -406,7 +406,7 @@ public class BytecodeUtils implements Opcodes {
         ClassNode classNode = new ClassNode();
 
         //set the classNodes basic information
-        classNode.version = Opcodes.V1_8;
+        classNode.version = Opcodes.V21;
         classNode.access = Opcodes.ACC_PUBLIC;
         classNode.name = className;
         classNode.superName = "java/lang/Object";
@@ -438,6 +438,4 @@ public class BytecodeUtils implements Opcodes {
         }
         return index;
     }
-
-
 }

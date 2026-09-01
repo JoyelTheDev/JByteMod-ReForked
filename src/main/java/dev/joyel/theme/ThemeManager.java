@@ -60,13 +60,11 @@ public final class ThemeManager {
         theme.applyToPalette();
         propagateToSwing(theme);
         for (ThemeChangeListener l : listeners) l.onThemeChanged(theme);
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        SwingUtilities.invokeLater(() -> {
                 for (java.awt.Window w : java.awt.Window.getWindows()) {
                     SwingUtilities.updateComponentTreeUI(w);
                     w.repaint();
                 }
-            }
         });
     }
 
