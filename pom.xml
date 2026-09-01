@@ -210,10 +210,10 @@
 				<version>3.15.0</version>
 				<configuration>
 					<release>21</release>
-					<compilerArgs>
-						<arg>--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
-						<arg>--add-opens=java.desktop/javax.swing=ALL-UNNAMED</arg>
-					</compilerArgs>
+					<excludes>
+						<exclude>org/objectweb/asm/*.java</exclude>
+						<exclude>org/objectweb/asm/tree/*.java</exclude>
+					</excludes>
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
@@ -222,7 +222,29 @@
 						</path>
 					</annotationProcessorPaths>
 				</configuration>
+				<executions>
+					<execution>
+						<id>compile-asm-patches</id>
+						<phase>compile</phase>
+						<goals><goal>compile</goal></goals>
+						<configuration>
+							<includes>
+								<include>org/objectweb/asm/*.java</include>
+								<include>org/objectweb/asm/tree/*.java</include>
+							</includes>
+							<excludes>
+							</excludes>
+							<compilerArgs>
+								<arg>--patch-module=org.objectweb.asm=${project.build.sourceDirectory}/org/objectweb/asm</arg>
+								<arg>--patch-module=org.objectweb.asm.tree=${project.build.sourceDirectory}/org/objectweb/asm/tree</arg>
+								<arg>--add-reads=org.objectweb.asm=ALL-UNNAMED</arg>
+							</compilerArgs>
+							<outputDirectory>${project.build.outputDirectory}</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
@@ -235,11 +257,12 @@
 							<mainClass>de.xbrowniecodez.jbytemod.Main</mainClass>
 						</manifest>
 						<manifestEntries>
-							<Add-Opens>java.base/java.lang java.desktop/javax.swing</Add-Opens>
+							<Add-Opens>java.base/java.lang ALL-UNNAMED java.desktop/javax.swing ALL-UNNAMED</Add-Opens>
 						</manifestEntries>
 					</archive>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -254,6 +277,8 @@
 								<exclude>META-INF/*.SF</exclude>
 								<exclude>META-INF/*.DSA</exclude>
 								<exclude>META-INF/*.RSA</exclude>
+								<exclude>META-INF/versions/9/module-info.class</exclude>
+								<exclude>module-info.class</exclude>
 							</excludes>
 						</filter>
 					</filters>
@@ -261,7 +286,7 @@
 						<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 							<mainClass>de.xbrowniecodez.jbytemod.Main</mainClass>
 							<manifestEntries>
-								<Add-Opens>java.base/java.lang java.desktop/javax.swing</Add-Opens>
+								<Add-Opens>java.base/java.lang ALL-UNNAMED java.desktop/javax.swing ALL-UNNAMED</Add-Opens>
 							</manifestEntries>
 						</transformer>
 					</transformers>
@@ -269,9 +294,7 @@
 				<executions>
 					<execution>
 						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
+						<goals><goal>shade</goal></goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -280,11 +303,9 @@
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
 					<execution>
-						<id>unpack</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>unpack</goal>
-						</goals>
+						<id>unpack-asm-base</id>
+						<phase>process-classes</phase>
+						<goals><goal>unpack</goal></goals>
 						<configuration>
 							<artifactItems>
 								<artifactItem>
@@ -292,10 +313,10 @@
 									<artifactId>asm</artifactId>
 									<version>${asm.version}</version>
 									<type>jar</type>
-									<overWrite>true</overWrite>
-									<outputDirectory>${project.build.directory}/classes</outputDirectory>
+									<overWrite>false</overWrite>
+									<outputDirectory>${project.build.outputDirectory}</outputDirectory>
 									<excludes>
-										**/ModuleWriter.class, **/ClassWriter.class, **/SymbolTable.class, **/Symbol.class
+										**/ModuleWriter.class,**/ClassWriter.class,**/SymbolTable.class,**/Symbol.class,**/module-info.class
 									</excludes>
 								</artifactItem>
 								<artifactItem>
@@ -303,10 +324,10 @@
 									<artifactId>asm-tree</artifactId>
 									<version>${asm.version}</version>
 									<type>jar</type>
-									<overWrite>true</overWrite>
-									<outputDirectory>${project.build.directory}/classes</outputDirectory>
+									<overWrite>false</overWrite>
+									<outputDirectory>${project.build.outputDirectory}</outputDirectory>
 									<excludes>
-										**/AbstractInsnNode.class, **/LdcInsnNode.class, **/InsnNode.class, **/IntInsnNode.class, **/LabelNode.class, **/MethodInsnNode.class, **/FieldInsnNode.class, **/VarInsnNode.class, **/TypeInsnNode.class, **/MultiANewArrayInsnNode.class, **/IincInsnNode.class, **/JumpInsnNode.class, **/InvokeDynamicInsnNode.class, **/TableSwitchInsnNode.class, **/LookupSwitchInsnNode.class, **/LineNumberNode.class, */FrameNode.class
+										**/AbstractInsnNode.class,**/LdcInsnNode.class,**/InsnNode.class,**/IntInsnNode.class,**/LabelNode.class,**/MethodInsnNode.class,**/FieldInsnNode.class,**/VarInsnNode.class,**/TypeInsnNode.class,**/MultiANewArrayInsnNode.class,**/IincInsnNode.class,**/JumpInsnNode.class,**/InvokeDynamicInsnNode.class,**/TableSwitchInsnNode.class,**/LookupSwitchInsnNode.class,**/LineNumberNode.class,**/FrameNode.class,**/module-info.class
 									</excludes>
 								</artifactItem>
 							</artifactItems>
