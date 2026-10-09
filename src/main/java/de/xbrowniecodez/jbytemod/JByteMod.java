@@ -2,6 +2,7 @@ package de.xbrowniecodez.jbytemod;
 
 import com.sun.tools.attach.VirtualMachine;
 import dev.joyel.theme.ThemeManager;
+import de.xbrowniecodez.jbytemod.ui.FileDropSupport;
 import de.xbrowniecodez.jbytemod.utils.BytecodeUtils;
 import de.xbrowniecodez.jbytemod.utils.Utils;
 import de.xbrowniecodez.jbytemod.utils.update.objects.Version;
@@ -45,6 +46,7 @@ import java.lang.instrument.Instrumentation;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.LinkedHashMap;
 
 @Getter
@@ -112,6 +114,8 @@ public class JByteMod extends JFrame {
         if (jarArchive != null) {
             refreshTree();
         }
+
+        FileDropSupport.install(this, this::loadFile);
     }
 
     private void createSplitPane(Container container) {
@@ -155,7 +159,7 @@ public class JByteMod extends JFrame {
      */
     public void loadFile(File input) {
         this.filePath = input;
-        String ap = input.getAbsolutePath();
+        String ap = input.getAbsolutePath().toLowerCase(Locale.ROOT);
 
         try {
             if (ap.endsWith(".jar") || ap.endsWith(".apk")) {
