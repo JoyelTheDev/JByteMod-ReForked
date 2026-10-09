@@ -1,5 +1,7 @@
 package de.xbrowniecodez.jbytemod.ui;
 
+import dev.joyel.ui.ToastManager;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
