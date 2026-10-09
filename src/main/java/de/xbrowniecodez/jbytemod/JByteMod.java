@@ -171,7 +171,9 @@ public class JByteMod extends JFrame {
             }
 
             notifyPlugins();
+            Main.INSTANCE.getLogger().successNotification("Loaded " + input.getName());
         } catch (Throwable e) {
+            Main.INSTANCE.getLogger().errNotification("Failed to load " + input.getName());
             new ErrorDisplay(e);
         }
     }

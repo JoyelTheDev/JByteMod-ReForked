@@ -2,6 +2,7 @@ package me.grax.jbytemod.logging;
 
 import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.ui.NotificationManager;
+import dev.joyel.ui.ToastManager;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
@@ -26,6 +27,21 @@ public class Logging extends PrintStream {
     public void logNotification(String text) {
         logConsole(getPrefix(Level.INFO), text);
         NotificationManager.showNotification(text);
+    }
+
+    public void successNotification(String text) {
+        logConsole(getPrefix(Level.INFO), text);
+        ToastManager.success(text);
+    }
+
+    public void warnNotification(String text) {
+        logConsole(getPrefix(Level.WARN), text);
+        ToastManager.warning(text);
+    }
+
+    public void errNotification(String text) {
+        logConsole(getPrefix(Level.ERROR), text);
+        ToastManager.error(text);
     }
 
     public void warn(String text) {
