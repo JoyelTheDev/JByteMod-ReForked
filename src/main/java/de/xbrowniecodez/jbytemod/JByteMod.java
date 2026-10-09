@@ -224,6 +224,9 @@ public class JByteMod extends JFrame {
     public void refreshTree() {
         Main.INSTANCE.getLogger().log("Building tree..");
         this.jarTree.refreshTree(jarArchive);
+        if (pageEndPanel != null && jarArchive != null && jarArchive.getClasses() != null) {
+            pageEndPanel.setClassCount(jarArchive.getClasses().size());
+        }
     }
 
     public void saveFile(File output) {
@@ -240,6 +243,7 @@ public class JByteMod extends JFrame {
         }
         this.currentNode = cn;
         this.currentMethod = null;
+        if (pageEndPanel != null) pageEndPanel.setSelection(cn, null);
         infoPanel.selectClass(cn);
         codeList.loadFields(cn);
         tabbedPane.selectClass(cn);
@@ -275,6 +279,7 @@ public class JByteMod extends JFrame {
         OpUtils.clearLabelCache();
         this.currentNode = cn;
         this.currentMethod = mn;
+        if (pageEndPanel != null) pageEndPanel.setSelection(cn, mn);
         infoPanel.selectMethod(cn, mn);
         if (!codeList.loadInstructions(mn)) {
             codeList.setSelectedIndex(-1);

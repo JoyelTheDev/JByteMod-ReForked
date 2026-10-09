@@ -33,6 +33,7 @@ public class SaveTask extends SwingWorker<Void, Integer> {
     @Override
     protected Void doInBackground() throws Exception {
         synchronized (this.file) {
+            if (jpb != null) jpb.setTask("Saving");
             try {
                 Map<String, ClassNode> classes = this.file.getClasses();
                 Map<String, byte[]> outputBytes = this.file.getOutput();

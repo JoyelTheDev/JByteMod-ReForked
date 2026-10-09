@@ -59,6 +59,7 @@ public class LoadTask extends SwingWorker<Void, Integer> {
 
     @Override
     protected Void doInBackground() throws Exception {
+        if (jpb != null) jpb.setTask("Loading");
         publish(0);
         this.loadFiles(input);
         publish(100);
