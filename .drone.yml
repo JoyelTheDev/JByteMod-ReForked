@@ -11,7 +11,7 @@ steps:
       servers:
         from_secret: nexus
   - name: build
-    image: "maven:3.9.7-amazoncorretto-21"
+    image: "maven:3.9.11-amazoncorretto-25"
     volumes:
       - name: cache
         path: /root/.m2

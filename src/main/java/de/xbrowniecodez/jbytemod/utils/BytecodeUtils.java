@@ -406,7 +406,7 @@ public class BytecodeUtils implements Opcodes {
         ClassNode classNode = new ClassNode();
 
         //set the classNodes basic information
-        classNode.version = Opcodes.V21;
+        classNode.version = Opcodes.V25;
         classNode.access = Opcodes.ACC_PUBLIC;
         classNode.name = className;
         classNode.superName = "java/lang/Object";

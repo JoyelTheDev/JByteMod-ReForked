@@ -9,7 +9,7 @@
 	<packaging>jar</packaging>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.release>21</maven.compiler.release>
+		<maven.compiler.release>25</maven.compiler.release>
 		<asm.version>9.10.1</asm.version>
 		<procyon.version>0.6.0</procyon.version>
 		<cfr.version>0.152</cfr.version>
@@ -209,7 +209,7 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.16.0</version>
 				<configuration>
-					<release>21</release>
+					<release>25</release>
 					<excludes>
 						<exclude>org/objectweb/asm/*.java</exclude>
 						<exclude>org/objectweb/asm/tree/*.java</exclude>
@@ -257,7 +257,8 @@
 							<mainClass>de.xbrowniecodez.jbytemod.Main</mainClass>
 						</manifest>
 						<manifestEntries>
-							<Add-Opens>java.base/java.lang ALL-UNNAMED java.desktop/javax.swing ALL-UNNAMED</Add-Opens>
+							<Add-Opens>java.base/java.lang ALL-UNNAMED java.desktop/javax.swing ALL-UNNAMED jdk.attach/sun.tools.attach ALL-UNNAMED</Add-Opens>
+							<Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
 						</manifestEntries>
 					</archive>
 				</configuration>
@@ -286,7 +287,8 @@
 						<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 							<mainClass>de.xbrowniecodez.jbytemod.Main</mainClass>
 							<manifestEntries>
-								<Add-Opens>java.base/java.lang ALL-UNNAMED java.desktop/javax.swing ALL-UNNAMED</Add-Opens>
+								<Add-Opens>java.base/java.lang ALL-UNNAMED java.desktop/javax.swing ALL-UNNAMED jdk.attach/sun.tools.attach ALL-UNNAMED</Add-Opens>
+								<Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
 							</manifestEntries>
 						</transformer>
 					</transformers>
