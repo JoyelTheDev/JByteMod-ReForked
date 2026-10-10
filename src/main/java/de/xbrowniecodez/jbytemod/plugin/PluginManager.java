@@ -26,7 +26,7 @@ public class PluginManager implements AutoCloseable {
         if (pluginFolder.exists() && pluginFolder.isDirectory()) {
             loadPlugins();
         } else {
-            Main.INSTANCE.getLogger().err("No plugin folder found!");
+            Main.INSTANCE.getLogger().log("No plugin folder found, skipping external plugins.");
         }
     }
 
@@ -40,15 +40,14 @@ public class PluginManager implements AutoCloseable {
             plugins.add(plugin);
             Main.INSTANCE.getLogger().log("Built-in plugin registered: " + plugin.getName() + " v" + plugin.getVersion());
         } catch (Exception e) {
-            Main.INSTANCE.getLogger().err("Failed to register built-in plugin: " + plugin.getName());
-            e.printStackTrace();
+            Main.INSTANCE.getLogger().err("Failed to register built-in plugin " + plugin.getName() + ": " + e);
         }
     }
 
     private void loadPlugins() {
         File[] files = pluginFolder.listFiles();
         if (files == null) {
-            Main.INSTANCE.getLogger().err("Plugin folder is empty or does not exist!");
+            Main.INSTANCE.getLogger().warn("Plugin folder could not be listed.");
             return;
         }
 
@@ -82,26 +81,38 @@ public class PluginManager implements AutoCloseable {
                     }
                 }
             } catch (Exception e) {
-                Main.INSTANCE.getLogger().err("Plugin " + file.getName() + " failed to load!");
-                e.printStackTrace();
+                Main.INSTANCE.getLogger().err("Plugin " + file.getName() + " failed to load: " + e);
             }
         }
         Main.INSTANCE.getLogger().log(plugins.size() + " plugin(s) loaded!");
     }
 
     private void loadClassFromEntry(String name) {
-        try {
-            String className = name.replace('/', '.').substring(0, name.length() - 6);
-            Class<?> loadedClass = Class.forName(className, true, pluginClassLoader);
-            if (Plugin.class.isAssignableFrom(loadedClass) && !loadedClass.equals(Plugin.class)) {
-                Plugin pluginInstance = (Plugin) loadedClass.getDeclaredConstructor().newInstance();
-                pluginInstance.init();
-                plugins.add(pluginInstance);
-            }
-        } catch (Exception e) {
-            Main.INSTANCE.getLogger().err("Failed to load class " + name);
-            e.printStackTrace();
+        if (name.equals("module-info.class") || name.endsWith("package-info.class") || name.startsWith("META-INF/")) {
+            return;
         }
+        String className = name.replace('/', '.').substring(0, name.length() - 6);
+        try {
+            Class<?> loadedClass = Class.forName(className, false, pluginClassLoader);
+            if (!isInstantiablePlugin(loadedClass)) {
+                return;
+            }
+            Plugin pluginInstance = (Plugin) loadedClass.getDeclaredConstructor().newInstance();
+            pluginInstance.init();
+            plugins.add(pluginInstance);
+            Main.INSTANCE.getLogger().log("Plugin loaded: " + pluginInstance.getName() + " v" + pluginInstance.getVersion());
+        } catch (LinkageError | ReflectiveOperationException e) {
+            Main.INSTANCE.getLogger().err("Failed to load plugin class " + className + ": " + e);
+        } catch (RuntimeException e) {
+            Main.INSTANCE.getLogger().err("Plugin " + className + " failed during init: " + e);
+        }
+    }
+
+    private static boolean isInstantiablePlugin(Class<?> candidate) {
+        return Plugin.class.isAssignableFrom(candidate)
+                && !candidate.equals(Plugin.class)
+                && !candidate.isInterface()
+                && !java.lang.reflect.Modifier.isAbstract(candidate.getModifiers());
     }
 
     @Override
@@ -109,12 +120,16 @@ public class PluginManager implements AutoCloseable {
         for (Plugin plugin : plugins) {
             try {
                 plugin.shutdown();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Main.INSTANCE.getLogger().warn("Plugin " + plugin.getName() + " failed to shut down: " + e);
+            }
         }
         if (pluginClassLoader != null) {
             try {
                 pluginClassLoader.close();
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                Main.INSTANCE.getLogger().warn("Plugin class loader failed to close: " + e);
+            }
         }
     }
 }

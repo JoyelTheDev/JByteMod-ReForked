@@ -49,7 +49,7 @@ Open files via `File > Open` or drag and drop onto the window.
 mvn clean package
 ```
 
-Output JAR is placed in `target/`. Requires JDK 21 and Maven 3.9+.
+Output JAR is placed in `target/`. Requires JDK 25 and Maven 3.9+.
 
 ---
 
