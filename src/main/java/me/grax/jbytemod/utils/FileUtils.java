@@ -3,7 +3,7 @@ package me.grax.jbytemod.utils;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.File;
-import java.util.Locale
+import java.util.Locale;
 
 public class FileUtils {
     public static boolean exists(File f) {
