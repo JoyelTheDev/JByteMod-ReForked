@@ -3,6 +3,7 @@ package me.grax.jbytemod.utils;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.io.File;
+import java.util.Locale
 
 public class FileUtils {
     public static boolean exists(File f) {
@@ -10,8 +11,9 @@ public class FileUtils {
     }
 
     public static boolean isType(File f, String... types) {
+        String fileName = f.getName().toLowerCase(Locale.ROOT);
         for (String type : types) {
-            if (f.getName().endsWith(type)) {
+            if (fileName.endsWith(type.toLowerCase(Locale.ROOT))) {
                 return true;
             }
         }
