@@ -25,6 +25,9 @@ import java.util.*;
 
 public class LoadTask extends SwingWorker<Void, Integer> {
 
+    private static final int BAD_CLASS_THRESHOLD = 80;
+    private static final double HIGH_MEMORY_RATIO = 0.75;
+
     private ZipFile input;
     private PageEndPanel jpb;
     private JByteMod jbm;
@@ -81,10 +84,9 @@ public class LoadTask extends SwingWorker<Void, Integer> {
      */
     public void loadFiles(ZipFile jar) throws IOException {
         long mem = Runtime.getRuntime().totalMemory();
-        if (mem / (double) maxMem > 0.75) {
+        if (mem / (double) maxMem > HIGH_MEMORY_RATIO) {
              Main.INSTANCE.getLogger().warn("Memory usage is high: " + Math.round((mem / (double) maxMem * 100d)) + "%");
         }
-        System.gc();
         Map<String, ClassNode> classes = new HashMap<String, ClassNode>();
         Map<String, byte[]> otherFiles = new HashMap<String, byte[]>();
 
@@ -138,8 +140,7 @@ public class LoadTask extends SwingWorker<Void, Integer> {
 
             handleMemoryWarning(startTime, bytes);
         } catch (Exception e) {
-            e.printStackTrace();
-             Main.INSTANCE.getLogger().err("Failed loading file");
+            Main.INSTANCE.getLogger().err("Failed loading " + name + ": " + e);
         }
     }
 
@@ -168,31 +169,35 @@ public class LoadTask extends SwingWorker<Void, Integer> {
 
             handleMemoryWarning(startTime, bytes);
         } catch (Exception e) {
-            e.printStackTrace();
-             Main.INSTANCE.getLogger().err("Failed loading file");
+            Main.INSTANCE.getLogger().err("Failed loading " + name + ": " + e);
         }
     }
 
     private void processClassFile(String name, byte[] bytes, Map<String, ClassNode> classes, Map<String, byte[]> otherFiles) {
-        synchronized (classes) {
-            try {
-                if (ClassUtils.isClassFileFormat(bytes)) {
-                    final ClassNode cn = BytecodeUtils.getClassNodeFromBytes(bytes);
-                    int rate = Main.INSTANCE.getJByteMod().getOptions().get("bad_class_check").getBoolean() ? FileUtils.isBadClass(cn) : 0;
+        if (!ClassUtils.isClassFileFormat(bytes)) {
+            keepRaw(name, bytes, otherFiles);
+            return;
+        }
+        try {
+            final ClassNode cn = BytecodeUtils.getClassNodeFromBytes(bytes);
+            int rate = Main.INSTANCE.getJByteMod().getOptions().get("bad_class_check").getBoolean() ? FileUtils.isBadClass(cn) : 0;
 
-                    if (rate <= 80) {
-                        classes.put(cn.name, cn);
-                    } else {
-                        synchronized (otherFiles) {
-                            otherFiles.put(name, bytes);
-                        }
-                    }
+            if (rate <= BAD_CLASS_THRESHOLD) {
+                synchronized (classes) {
+                    classes.put(cn.name, cn);
                 }
-            } catch (Exception ex) {
-                synchronized (otherFiles) {
-                    otherFiles.put(name, bytes);
-                }
+            } else {
+                keepRaw(name, bytes, otherFiles);
             }
+        } catch (Exception ex) {
+            Main.INSTANCE.getLogger().warn("Could not parse " + name + ", keeping raw bytes: " + ex);
+            keepRaw(name, bytes, otherFiles);
+        }
+    }
+
+    private void keepRaw(String name, byte[] bytes, Map<String, byte[]> otherFiles) {
+        synchronized (otherFiles) {
+            otherFiles.put(name, bytes);
         }
     }
 
