@@ -14,11 +14,17 @@ import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class SaveTask extends SwingWorker<Void, Integer> {
+
+    private static final String MANIFEST = "META-INF/MANIFEST.MF";
 
     private final File output;
     private final PageEndPanel jpb;
@@ -38,60 +44,106 @@ public class SaveTask extends SwingWorker<Void, Integer> {
                 Map<String, ClassNode> classes = this.file.getClasses();
                 Map<String, byte[]> outputBytes = this.file.getOutput();
                 int flags = Main.INSTANCE.getJByteMod().getOptions().get("compute_maxs").getBoolean() ? 1 : 0;
-                 Main.INSTANCE.getLogger().log("Writing..");
+                Main.INSTANCE.getLogger().log("Writing..");
                 if (this.file.isSingleEntry()) {
-                    ClassNode node = classes.values().iterator().next();
-                    CustomClassWriter writer = new CustomClassWriter(flags);
-                    node.accept(writer);
-                    publish(50);
-                    Main.INSTANCE.getLogger().log("Saving..");
-                    Files.write(new File(this.output.toString().replace(".jar", ".class")).toPath(), writer.toByteArray());
-                    publish(100);
-                    Main.INSTANCE.getLogger().successNotification("Saved " + this.output.getName());
+                    saveSingleClass(classes, flags);
                     return null;
                 }
 
                 publish(0);
-                double size = classes.keySet().size();
+                Map<String, byte[]> compiled = new LinkedHashMap<>();
+                List<String> failed = new ArrayList<>();
+                double size = classes.size();
                 double i = 0;
-                for (String s : classes.keySet()) {
-                    try{
-                        ClassNode node = classes.get(s);
-                        CustomClassWriter writer = new CustomClassWriter(flags);
-                        node.accept(writer);
-                        outputBytes.put(s + ".class", writer.toByteArray());
-                        publish((int) ((i++ / size) * 50d));
-                    }catch(StringIndexOutOfBoundsException exception) {
-                         Main.INSTANCE.getLogger().println("Failed to save " + classes.get(s).name);
+                for (Map.Entry<String, ClassNode> entry : classes.entrySet()) {
+                    try {
+                        compiled.put(entry.getKey() + ".class", writeClass(entry.getValue(), flags));
+                    } catch (Exception | StackOverflowError ex) {
+                        failed.add(entry.getKey());
+                        Main.INSTANCE.getLogger().err("Failed to save " + entry.getKey() + ": " + ex);
                     }
+                    publish((int) ((i++ / size) * 50d));
                 }
+
+                if (!failed.isEmpty()) {
+                    Main.INSTANCE.getLogger().errNotification("Save aborted, " + failed.size() + " class(es) failed to write");
+                    return null;
+                }
+
+                outputBytes.putAll(compiled);
                 publish(50);
-                 Main.INSTANCE.getLogger().log("Saving..");
-                this.saveAsJarNew(outputBytes, output.getAbsolutePath());
-                 Main.INSTANCE.getLogger().successNotification("Saved " + this.output.getName());
+                Main.INSTANCE.getLogger().log("Saving..");
+                saveAsJarNew(outputBytes, output.toPath());
+                Main.INSTANCE.getLogger().successNotification("Saved " + this.output.getName());
             } catch (Exception e) {
-                e.printStackTrace();
-                 Main.INSTANCE.getLogger().errNotification("Saving failed: " + e.getMessage());
+                Main.INSTANCE.getLogger().errNotification("Saving failed: " + e.getMessage());
             }
             publish(100);
             return null;
         }
     }
 
-    public void saveAsJarNew(Map<String, byte[]> outBytes, String fileName) {
-        try {
-            ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(Paths.get(fileName)));
-            out.setEncoding("UTF-8");
-            for (String entry : outBytes.keySet()) {
-                out.putNextEntry(new ZipEntry(entry));
-                if (!entry.endsWith("/") && !entry.endsWith("\\"))
-                    out.write(outBytes.get(entry));
-                out.closeEntry();
-            }
-            out.close();
+    private byte[] writeClass(ClassNode node, int flags) {
+        CustomClassWriter writer = new CustomClassWriter(flags);
+        node.accept(writer);
+        return writer.toByteArray();
+    }
 
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void saveSingleClass(Map<String, ClassNode> classes, int flags) throws IOException {
+        ClassNode node = classes.values().iterator().next();
+        byte[] bytes = writeClass(node, flags);
+        publish(50);
+        Main.INSTANCE.getLogger().log("Saving..");
+        Files.write(toClassPath(output), bytes);
+        publish(100);
+        Main.INSTANCE.getLogger().successNotification("Saved " + toClassPath(output).getFileName());
+    }
+
+    static Path toClassPath(File target) {
+        String name = target.getName();
+        if (name.toLowerCase(Locale.ROOT).endsWith(".jar")) {
+            name = name.substring(0, name.length() - 4) + ".class";
+        } else if (!name.toLowerCase(Locale.ROOT).endsWith(".class")) {
+            name = name + ".class";
+        }
+        File parent = target.getAbsoluteFile().getParentFile();
+        return new File(parent, name).toPath();
+    }
+
+    static Map<String, byte[]> orderEntries(Map<String, byte[]> source) {
+        Map<String, byte[]> ordered = new LinkedHashMap<>();
+        byte[] manifest = source.get(MANIFEST);
+        if (manifest != null) {
+            ordered.put(MANIFEST, manifest);
+        }
+        for (Map.Entry<String, byte[]> entry : source.entrySet()) {
+            ordered.putIfAbsent(entry.getKey(), entry.getValue());
+        }
+        return ordered;
+    }
+
+    public void saveAsJarNew(Map<String, byte[]> outBytes, Path target) throws IOException {
+        Path absolute = target.toAbsolutePath();
+        Path temp = Files.createTempFile(absolute.getParent(), ".jbm-save-", ".tmp");
+        try {
+            try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(temp))) {
+                out.setEncoding("UTF-8");
+                for (Map.Entry<String, byte[]> entry : orderEntries(outBytes).entrySet()) {
+                    String name = entry.getKey();
+                    out.putNextEntry(new ZipEntry(name));
+                    if (!name.endsWith("/") && !name.endsWith("\\")) {
+                        out.write(entry.getValue());
+                    }
+                    out.closeEntry();
+                }
+            }
+            try {
+                Files.move(temp, absolute, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                Files.move(temp, absolute, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temp);
         }
     }
 
