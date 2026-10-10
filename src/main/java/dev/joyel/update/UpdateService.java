@@ -10,6 +10,10 @@ public final class UpdateService {
 
     public static void checkAsync(String currentVersion) {
         if (currentVersion == null || currentVersion.isBlank()) return;
+        if (!isEnabled()) {
+            Main.INSTANCE.getLogger().log("Update check disabled in options.");
+            return;
+        }
 
         Thread t = new Thread(() -> {
             Main.INSTANCE.getLogger().log("Checking for updates (semver)...");
@@ -31,5 +35,13 @@ public final class UpdateService {
         }, "JByteMod-UpdateChecker");
         t.setDaemon(true);
         t.start();
+    }
+
+    private static boolean isEnabled() {
+        try {
+            return Main.INSTANCE.getJByteMod().getOptions().get("check_update").getBoolean();
+        } catch (RuntimeException e) {
+            return true;
+        }
     }
 }

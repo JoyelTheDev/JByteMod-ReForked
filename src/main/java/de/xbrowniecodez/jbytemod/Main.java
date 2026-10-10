@@ -70,11 +70,11 @@ public enum Main {
     private void loadFileIfNeeded(CommandLine cmd, JByteMod frame) {
         if (cmd.hasOption("f")) {
             File input = new File(cmd.getOptionValue("f"));
-            if (FileUtils.exists(input) && FileUtils.isType(input, ".jar", ".class")) {
+            if (FileUtils.exists(input) && FileUtils.isType(input, ".jar", ".class", ".apk")) {
                 frame.loadFile(input);
                 Main.INSTANCE.getLogger().log("Specified file loaded");
             } else {
-                Main.INSTANCE.getLogger().err("Specified file not found");
+                Main.INSTANCE.getLogger().err("Specified file not found or unsupported (expected .jar, .class or .apk): " + input);
             }
         }
     }
