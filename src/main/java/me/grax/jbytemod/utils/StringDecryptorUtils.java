@@ -12,6 +12,13 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.objectweb.asm.Opcodes.*;
@@ -19,24 +26,87 @@ import static org.objectweb.asm.Opcodes.*;
 @SuppressWarnings("java:S3011")
 public class StringDecryptorUtils {
 
+    private static final long CALL_TIMEOUT_MS = 5000;
+
+    private static final class LoadedDecryptor implements AutoCloseable {
+        private final Class<?> clazz;
+        private final URLClassLoader loader;
+        private final java.io.File tempJar;
+
+        private LoadedDecryptor(Class<?> clazz, URLClassLoader loader, java.io.File tempJar) {
+            this.clazz = clazz;
+            this.loader = loader;
+            this.tempJar = tempJar;
+        }
+
+        @Override
+        public void close() {
+            try {
+                loader.close();
+            } catch (java.io.IOException e) {
+                de.xbrowniecodez.jbytemod.Main.INSTANCE.getLogger().warn("Decryptor class loader failed to close: " + e);
+            }
+            tempJar.delete();
+        }
+    }
+
+    private static final class TimedInvoker implements AutoCloseable {
+        private final ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "JByteMod-StringDecryptor");
+            thread.setDaemon(true);
+            return thread;
+        });
+        private final AtomicBoolean timedOut = new AtomicBoolean();
+
+        Object invoke(Method method, Object[] args) throws Exception {
+            if (timedOut.get()) {
+                throw new IllegalStateException("decryptor aborted after a timeout");
+            }
+            Callable<Object> call = () -> method.invoke(null, args);
+            Future<Object> future = executor.submit(call);
+            try {
+                return future.get(CALL_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                timedOut.set(true);
+                future.cancel(true);
+                de.xbrowniecodez.jbytemod.Main.INSTANCE.getLogger().warn("String decryptor call exceeded " + CALL_TIMEOUT_MS + " ms, aborting decryption");
+                throw e;
+            }
+        }
+
+        boolean hasTimedOut() {
+            return timedOut.get();
+        }
+
+        @Override
+        public void close() {
+            executor.shutdownNow();
+        }
+    }
+
     public static int decryptStrings(Map<String, ClassNode> classes, String targetOwner, String targetName, String targetDesc, byte[] jarBytes) {
+        LoadedDecryptor loaded = loadDecryptorClass(targetOwner, jarBytes);
+        if (loaded == null) {
+            return -1;
+        }
+        try (LoadedDecryptor decryptor = loaded; TimedInvoker invoker = new TimedInvoker()) {
+            Method decryptMethod = resolveMethod(decryptor.clazz, targetName, targetDesc);
+            if (decryptMethod == null) {
+                return -1;
+            }
+            return decryptAll(classes, targetOwner, targetName, targetDesc, decryptMethod, invoker);
+        }
+    }
+
+    private static int decryptAll(Map<String, ClassNode> classes, String targetOwner, String targetName, String targetDesc,
+                                  Method decryptMethod, TimedInvoker invoker) {
         AtomicInteger count = new AtomicInteger();
-
-        Class<?> decryptorClass = loadDecryptorClass(targetOwner, jarBytes);
-        if (decryptorClass == null) {
-            return -1;
-        }
-
-        Method decryptMethod = resolveMethod(decryptorClass, targetName, targetDesc);
-        if (decryptMethod == null) {
-            return -1;
-        }
 
         String normalizedOwner = targetOwner.replace('.', '/');
 
         classes.values().forEach(classNode ->
             classNode.methods.forEach(methodNode -> {
-                if (methodNode.instructions.getFirst() == null) {
+                if (invoker.hasTimedOut() || methodNode.instructions.getFirst() == null) {
                     return;
                 }
 
@@ -86,7 +156,7 @@ public class StringDecryptorUtils {
                             break;
                         }
                         try {
-                            Object decrypted = decryptMethod.invoke(null, argValues);
+                            Object decrypted = invoker.invoke(decryptMethod, argValues);
                             if (decrypted instanceof String) {
                                 results.add((String) decrypted);
                             } else {
@@ -168,15 +238,27 @@ public class StringDecryptorUtils {
         return null;
     }
 
-    private static Class<?> loadDecryptorClass(String owner, byte[] jarBytes) {
+    private static LoadedDecryptor loadDecryptorClass(String owner, byte[] jarBytes) {
+        java.io.File tempJar = null;
+        URLClassLoader loader = null;
         try {
-            java.io.File tempJar = java.io.File.createTempFile("jbm_decrypt_", ".jar");
+            tempJar = java.io.File.createTempFile("jbm_decrypt_", ".jar");
             tempJar.deleteOnExit();
             java.nio.file.Files.write(tempJar.toPath(), jarBytes);
-            URLClassLoader loader = new URLClassLoader(new URL[]{tempJar.toURI().toURL()}, ClassLoader.getSystemClassLoader());
-            String className = owner.replace('/', '.');
-            return Class.forName(className, true, loader);
+            loader = new URLClassLoader(new URL[]{tempJar.toURI().toURL()}, ClassLoader.getSystemClassLoader());
+            Class<?> clazz = Class.forName(owner.replace('/', '.'), true, loader);
+            return new LoadedDecryptor(clazz, loader, tempJar);
         } catch (Throwable t) {
+            if (loader != null) {
+                try {
+                    loader.close();
+                } catch (java.io.IOException e) {
+                    de.xbrowniecodez.jbytemod.Main.INSTANCE.getLogger().warn("Decryptor class loader failed to close: " + e);
+                }
+            }
+            if (tempJar != null) {
+                tempJar.delete();
+            }
             return null;
         }
     }
