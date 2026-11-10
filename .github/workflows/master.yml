@@ -63,7 +63,7 @@ jobs:
           fi
 
       - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v3.0.3
+        uses: softprops/action-gh-release@v3.0.4
         with:
           files: ${{ env.JAR_FILE }}
           tag_name: v${{ github.run_number }}
