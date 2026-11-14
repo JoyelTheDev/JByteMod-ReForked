@@ -57,17 +57,18 @@ jobs:
             echo "" >> CHANGELOG.md
             git log --pretty=format:"- %s (%h)" >> CHANGELOG.md
           else
-            echo "_Changes since $LAST_TAG_" >> CHANGELOG.md
+            echo "_Changes since ${LAST_TAG}_" >> CHANGELOG.md
             echo "" >> CHANGELOG.md
-            git log $LAST_TAG..HEAD --pretty=format:"- %s (%h)" >> CHANGELOG.md
+            git log "${LAST_TAG}..HEAD" --pretty=format:"- %s (%h)" >> CHANGELOG.md
           fi
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v3.0.4
         with:
           files: ${{ env.JAR_FILE }}
-          tag_name: v${{ github.run_number }}
-          name: JByteModZ New Build ${{ github.run_number }}
+          tag_name: build-${{ github.run_number }}
+          name: JByteMod ReForked dev build ${{ github.run_number }}
+          prerelease: true
           body_path: CHANGELOG.md
           overwrite_files: true
         env:
