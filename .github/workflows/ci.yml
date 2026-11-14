@@ -35,24 +35,8 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml
 
-      - name: Upload jar
-        uses: actions/upload-artifact@v4
-        with:
-          name: jar
-          path: target/JByteMod-ReForked-*.jar
-          if-no-files-found: error
-          retention-days: 7
-
       - name: Install Linux packaging tools
         run: sudo apt-get install -y fakeroot
 
       - name: Smoke test installer packaging
         run: bash packaging/build-installer.sh
-
-      - name: Upload installers
-        uses: actions/upload-artifact@v4
-        with:
-          name: installers-linux
-          path: target/installers/*
-          if-no-files-found: error
-          retention-days: 7
