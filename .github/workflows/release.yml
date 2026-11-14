@@ -63,9 +63,10 @@ jobs:
         env:
           VERSION: ${{ steps.meta.outputs.version }}
         run: |
-          PREVIOUS_TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD 2>/dev/null || true)"
           {
-            echo "## JByteMod ReForked ${VERSION} (build ${GITHUB_RUN_NUMBER})"
+            echo "## JByteMod ReForked ${VERSION}"
+            echo
+            echo "Latest build (#${GITHUB_RUN_NUMBER}) from commit \`${GITHUB_SHA::7}\`, built $(date -u '+%Y-%m-%d %H:%M UTC'). This release is replaced automatically on every push to master."
             echo
             echo "### Downloads"
             echo
@@ -80,26 +81,30 @@ jobs:
             echo
             echo "Installers bundle their own Java runtime and are attached to this release as each platform finishes building. They are not code-signed, so Windows SmartScreen or macOS Gatekeeper may ask for confirmation on first launch. Verify downloads with the \`SHA256SUMS-*.txt\` files."
             echo
-            echo "### Changes"
+            echo "### Recent changes"
             echo
-            if [[ -z "$PREVIOUS_TAG" ]]; then
-              git log HEAD --pretty=format:"- %s (%h)"
-            else
-              echo "_Changes since ${PREVIOUS_TAG}_"
-              echo
-              git log "${PREVIOUS_TAG}..HEAD" --pretty=format:"- %s (%h)"
-            fi
+            git log -n 15 --pretty=format:"- %s (%h)"
             echo
           } > RELEASE_NOTES.md
+
+      - name: Reset latest release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --yes || true
+          git tag -f latest "$GITHUB_SHA"
+          git push -f origin refs/tags/latest
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3.0.4
         with:
-          tag_name: v${{ github.run_number }}
+          tag_name: latest
           target_commitish: ${{ github.sha }}
-          name: JByteMod ReForked Build ${{ github.run_number }}
+          name: JByteMod ReForked Latest Build
           body_path: RELEASE_NOTES.md
           prerelease: ${{ steps.meta.outputs.prerelease == 'true' }}
+          make_latest: true
           files: release-files/*
           fail_on_unmatched_files: true
         env:
@@ -167,7 +172,7 @@ jobs:
       - name: Attach installers to release
         uses: softprops/action-gh-release@v3.0.4
         with:
-          tag_name: v${{ github.run_number }}
+          tag_name: latest
           files: target/installers/*
           fail_on_unmatched_files: true
         env:
