@@ -2,11 +2,13 @@ package me.grax.jbytemod.ui;
 
 import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
+import me.grax.jbytemod.utils.gui.Icons;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class MyToolBar extends JToolBar {
+    private static final int ICON_SIZE = 20;
     private MyMenuBar menubar;
 
     public MyToolBar(JByteMod jbm) {
@@ -27,7 +29,7 @@ public class MyToolBar extends JToolBar {
             this.add(makeNavigationButton(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("reload"), getIcon("reload"), e -> {
                 jbm.refreshAgentClasses();
             }));
-            this.add(makeNavigationButton(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("apply"), getIcon("save"), e -> {
+            this.add(makeNavigationButton(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("apply"), getIcon("apply"), e -> {
                 jbm.applyChangesAgent();
             }));
         }
@@ -44,17 +46,16 @@ public class MyToolBar extends JToolBar {
         }));
     }
 
-    private ImageIcon getIcon(String string) {
-        return new ImageIcon(Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/resources/toolbar/" + string + ".png")));
+    private Icon getIcon(String name) {
+        return Icons.svg(name, ICON_SIZE);
     }
 
-    protected JButton makeNavigationButton(String action, ImageIcon i, ActionListener a) {
+    protected JButton makeNavigationButton(String action, Icon i, ActionListener a) {
         JButton button = new JButton(i);
         button.setToolTipText(action);
         button.addActionListener(a);
         button.setFocusable(false);
-        button.setBorderPainted(false);
-        button.setRolloverEnabled(false);
+        button.putClientProperty("JButton.buttonType", "toolBarButton");
         return button;
     }
 }

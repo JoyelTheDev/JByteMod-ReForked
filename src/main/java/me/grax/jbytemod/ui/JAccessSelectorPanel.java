@@ -1,5 +1,6 @@
 package me.grax.jbytemod.ui;
 
+import me.grax.jbytemod.utils.gui.Icons;
 import me.lpk.util.AccessHelper;
 import org.objectweb.asm.Opcodes;
 
@@ -26,8 +27,7 @@ public class JAccessSelectorPanel extends JPanel implements Opcodes {
         this.add(visibility = new VisibilityButton(accezz));
         this.add(extras = new ExtrasButton(accezz));
         this.add(other = new OtherButton(accezz));
-        accessHelper = new JButton(
-                new ImageIcon(Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/resources/toolbar/table.png"))));
+        accessHelper = new JButton(Icons.svg("table", 16));
         accessHelper.addActionListener(e -> {
             new JAccessHelper(getAccess(), ae -> {
                 setAccess(Integer.parseInt(ae.getActionCommand()));
