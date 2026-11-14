@@ -5,6 +5,7 @@ import de.xbrowniecodez.jbytemod.ui.lists.AdressList;
 import me.grax.jbytemod.bookmark.BookmarkGutter;
 import me.grax.jbytemod.ui.lists.ErrorList;
 import me.grax.jbytemod.ui.lists.MyCodeList;
+import me.grax.jbytemod.utils.gui.LookUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,7 +20,7 @@ public class MyCodeEditor extends JPanel {
 
         JPanel left = new JPanel();
         left.setLayout(new BorderLayout());
-        left.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIManager.getColor("nimbusBorder")));
+        left.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, LookUtils.borderColor()));
 
         BookmarkGutter gutter = new BookmarkGutter(cl);
         cl.setBookmarkGutter(gutter);

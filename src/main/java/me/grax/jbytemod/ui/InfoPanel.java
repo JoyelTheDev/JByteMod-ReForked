@@ -1,9 +1,8 @@
 package me.grax.jbytemod.ui;
 
-import com.github.weisj.darklaf.ui.tabbedpane.DarkTabbedPaneBorder;
-import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import me.grax.jbytemod.ui.ifs.*;
+import me.grax.jbytemod.utils.gui.LookUtils;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
@@ -16,19 +15,24 @@ public class InfoPanel extends JPanel {
     private JByteMod jbm;
 
     public InfoPanel(JByteMod jbm) {
-        Color backgroundColor = Main.INSTANCE.getJByteMod().getOptions().get("use_dark_theme").getBoolean() ? new Color(33, 37, 43) : Color.WHITE;
         this.jbm = jbm;
         this.setLayout(new BorderLayout());
         deskPane = new JDesktopPane() {
             @Override
+            public void updateUI() {
+                super.updateUI();
+                setBorder(BorderFactory.createLineBorder(LookUtils.borderColor()));
+            }
+
+            @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                g.setColor(backgroundColor);
+                Color background = UIManager.getColor("Panel.background");
+                g.setColor(background != null ? background : getBackground());
                 g.fillRect(0, 0, getWidth(), getHeight());
             }
 
         };
-        deskPane.setBorder(new DarkTabbedPaneBorder());
         deskPane.setDesktopManager(new DeskMan());
         this.add(deskPane, BorderLayout.CENTER);
     }

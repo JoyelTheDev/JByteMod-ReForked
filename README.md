@@ -73,6 +73,7 @@ Extend the editor by dropping a `.jar` into the `plugins/` folder. Plugins recei
 
 ### UI & Accessibility
 - Four built-in themes: **Dark**, **Light**, **Monokai**, **Solarized Dark**
+- Modern look and feel powered by FlatLaf: rounded controls, slim scrollbars, animated light/dark switching
 - Custom theme editor
 - Localization in **8 languages**: English, German, Spanish, Portuguese (BR), Russian, Simplified Chinese, Traditional Chinese, Chinese
 - Interactive first-launch tutorial
