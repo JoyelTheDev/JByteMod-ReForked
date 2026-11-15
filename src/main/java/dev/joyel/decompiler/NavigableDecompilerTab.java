@@ -6,6 +6,8 @@ import de.xbrowniecodez.jbytemod.decompiler.ASMifierDecompiler;
 import de.xbrowniecodez.jbytemod.decompiler.JDCoreDecompiler;
 import de.xbrowniecodez.jbytemod.decompiler.VineflowerDecompiler;
 import dev.joyel.compile.RecompileService;
+import dev.joyel.editor.EditorExtras;
+import dev.joyel.editor.Minimap;
 import dev.joyel.ui.ToastManager;
 import me.grax.jbytemod.JarArchive;
 import me.grax.jbytemod.decompiler.CFRDecompiler;
@@ -40,6 +42,7 @@ public final class NavigableDecompilerTab extends JPanel {
     private final JToggleButton editButton = new JToggleButton("Edit");
     private final JButton recompileButton = new JButton("Recompile");
     private final JButton libsButton = new JButton("Libs...");
+    private final Minimap minimap;
 
     public NavigableDecompilerTab(JByteMod jbm) {
         this.jbm = jbm;
@@ -97,7 +100,14 @@ public final class NavigableDecompilerTab extends JPanel {
 
         RTextScrollPane scp = new RTextScrollPane(dp);
         scp.getVerticalScrollBar().setUnitIncrement(16);
-        add(scp, BorderLayout.CENTER);
+        this.minimap = new Minimap(dp, scp);
+        minimap.setVisible(EditorExtras.minimapEnabled());
+        EditorExtras.addListener(() -> minimap.setVisible(EditorExtras.minimapEnabled()));
+
+        JPanel body = new JPanel(new BorderLayout());
+        body.add(scp, BorderLayout.CENTER);
+        body.add(minimap, BorderLayout.EAST);
+        add(body, BorderLayout.CENTER);
     }
 
     private void setEditing(boolean editing) {

@@ -1,5 +1,6 @@
 package me.grax.jbytemod.ui;
 
+import dev.joyel.editor.EditorExtras;
 import android.util.Patterns;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
@@ -657,7 +658,7 @@ public class MyMenuBar extends JMenuBar {
         JOptionPane.showMessageDialog(null, "Can't find the target file, are you sure you have loaded the file already?", "Warn", JOptionPane.ERROR_MESSAGE);
     }
 
-    protected void openProcessSelection() {
+    public void openProcessSelection() {
         try {
             List<VirtualMachineDescriptor> list = VirtualMachine.list();
             VirtualMachine vm = null;
@@ -724,6 +725,7 @@ public class MyMenuBar extends JMenuBar {
                             op.setValue(jmi.isSelected());
                             o.save();
                             if (op.getName().equals("use_dark_theme")) LookUtils.changeTheme();
+                            if (op.getName().equals("show_minimap") || op.getName().equals("show_breadcrumbs")) EditorExtras.fireChanged();
                         }
                     });
                     menu.add(jmi);
@@ -915,10 +917,10 @@ public class MyMenuBar extends JMenuBar {
         }
     }
 
-    protected void openLoadDialogue() {
+    public void openLoadDialogue() {
         JFileChooser jfc = new JFileChooser(new File(System.getProperty("user.home") + File.separator + "Desktop"));
         jfc.setAcceptAllFileFilterUsed(false);
-        jfc.setFileFilter(new FileNameExtensionFilter("Java Package (*.jar) or Java Class (*.class)", "jar", "class"));
+        jfc.setFileFilter(new FileNameExtensionFilter("Java Package (*.jar), Java Class (*.class) or Android Package (*.apk)", "jar", "class", "apk"));
         int result = jfc.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File input = jfc.getSelectedFile();
@@ -942,7 +944,13 @@ public class MyMenuBar extends JMenuBar {
         }
     }
 
-    public boolean isAgent() { return agent; }
-    public File getLastFile() { return lastFile; }
-    public void setLastFile(File lastFile) { this.lastFile = lastFile; }
+    public boolean isAgent() { 
+        return agent; 
+    }
+    public File getLastFile() { 
+        return lastFile; 
+    }
+    public void setLastFile(File lastFile) { 
+        this.lastFile = lastFile; 
+    }
 }

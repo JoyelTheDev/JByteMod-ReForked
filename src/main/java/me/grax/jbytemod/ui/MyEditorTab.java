@@ -4,6 +4,8 @@ import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.Main;
 import lombok.Getter;
 import dev.joyel.decompiler.NavigableDecompilerTab;
+import dev.joyel.editor.BreadcrumbBar;
+import dev.joyel.editor.EditorExtras;
 import me.grax.jbytemod.ui.graph.ControlFlowPanel;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -22,6 +24,7 @@ public class MyEditorTab extends JPanel {
     private final ControlFlowPanel analysis;
     private final JPanel center;
     private final JButton codeButton;
+    private final BreadcrumbBar breadcrumbs;
     private boolean classSelected = false;
 
     public MyEditorTab(JByteMod jbm) {
@@ -73,6 +76,11 @@ public class MyEditorTab extends JPanel {
         selector.add(decompilerBtn);
         selector.add(analysisBtn);
         selector.setLayout(new FlowLayout(FlowLayout.LEFT));
+        this.breadcrumbs = new BreadcrumbBar(jbm);
+        breadcrumbs.setVisible(EditorExtras.breadcrumbsEnabled());
+        EditorExtras.addListener(() -> breadcrumbs.setVisible(EditorExtras.breadcrumbsEnabled()));
+
+        this.add(breadcrumbs, BorderLayout.PAGE_START);
         this.add(center, BorderLayout.CENTER);
         this.add(selector, BorderLayout.PAGE_END);
     }
@@ -101,6 +109,7 @@ public class MyEditorTab extends JPanel {
     }
 
     public void selectClass(ClassNode cn) {
+        breadcrumbs.setSelection(cn, null);
         Main.INSTANCE.getDiscord().updatePresence("Working on " + Main.INSTANCE.getJByteMod().getLastEditFile(), "Editing " + cn.name);
 
         String selectedComponentName = center.getComponent(0).getName();
@@ -115,6 +124,7 @@ public class MyEditorTab extends JPanel {
     }
 
     public void selectMethod(ClassNode cn, MethodNode mn) {
+        breadcrumbs.setSelection(cn, mn);
         Main.INSTANCE.getDiscord().updatePresence("Working on " + Main.INSTANCE.getJByteMod().getLastEditFile(), "Editing " + cn.name + "." + mn.name);
 
         String selectedComponentName = center.getComponent(0).getName();

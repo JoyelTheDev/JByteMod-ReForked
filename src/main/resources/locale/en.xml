@@ -227,5 +227,22 @@
    <string name="cfr_sugarenums">Sugar enums</string>
    <string name="cfr_tidymonitors">Tidy monitors</string>
    <string name="cfr_usenametable">Use name table</string>
+   <string name="welcome_home">Home</string>
+   <string name="welcome_tagline">Java bytecode editor and analyzer</string>
+   <string name="welcome_start">Start</string>
+   <string name="welcome_open">Open file...</string>
+   <string name="welcome_open_desc">Load a .jar, .class or .apk</string>
+   <string name="welcome_attach">Attach to process</string>
+   <string name="welcome_attach_desc">Inspect a running JVM</string>
+   <string name="welcome_recent">Recent</string>
+   <string name="welcome_clear">Clear all</string>
+   <string name="welcome_drop">Drop a file anywhere</string>
+   <string name="welcome_drop_desc">or click to browse  ·  .jar  .class  .apk</string>
+   <string name="welcome_empty">No recent files yet</string>
+   <string name="welcome_empty_desc">Files you open will show up here</string>
+   <string name="welcome_missing">Missing</string>
+   <string name="welcome_tip">Tip: drag a .jar, .class or .apk onto any part of this window</string>
+   <string name="show_minimap">Show minimap</string>
+   <string name="show_breadcrumbs">Show breadcrumb bar</string>
 </resources>
 
