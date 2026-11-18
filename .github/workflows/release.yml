@@ -63,6 +63,7 @@ jobs:
         env:
           VERSION: ${{ steps.meta.outputs.version }}
         run: |
+          PREVIOUS="$(git rev-parse -q --verify "refs/tags/latest^{commit}" || true)"
           {
             echo "## JByteMod ReForked ${VERSION}"
             echo
@@ -81,9 +82,17 @@ jobs:
             echo
             echo "Installers bundle their own Java runtime and are attached to this release as each platform finishes building. They are not code-signed, so Windows SmartScreen or macOS Gatekeeper may ask for confirmation on first launch. Verify downloads with the \`SHA256SUMS-*.txt\` files."
             echo
-            echo "### Recent changes"
+            echo "### Changes in this build"
             echo
-            git log -n 15 --pretty=format:"- %s (%h)"
+            if [[ -n "$PREVIOUS" && "$PREVIOUS" != "$(git rev-parse HEAD)" ]]; then
+              echo "_Since the previous build (\`${PREVIOUS::7}\`)_"
+              echo
+              git log -n 40 --pretty=format:"- %s (%h)" "${PREVIOUS}..HEAD"
+            elif [[ -n "$PREVIOUS" ]]; then
+              echo "No new commits since the previous build."
+            else
+              git log -n 15 --pretty=format:"- %s (%h)"
+            fi
             echo
           } > RELEASE_NOTES.md
 
