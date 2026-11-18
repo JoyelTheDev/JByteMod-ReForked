@@ -11,7 +11,6 @@ VENDOR="${VENDOR:-JByteMod ReForked contributors}"
 COPYRIGHT="${COPYRIGHT:-Copyright (C) JByteMod ReForked contributors}"
 BUNDLE_ID="${BUNDLE_ID:-io.github.jbytemod.reforked}"
 MAINTAINER_EMAIL="${MAINTAINER_EMAIL:-jbytemod-reforked@users.noreply.github.com}"
-WIN_UPGRADE_UUID="7c1e5b52-3f0a-4d63-9a58-1b8f0e6d2a47"
 DRY_RUN="${DRY_RUN:-0}"
 
 VERSION="${VERSION:-$(awk -F'[<>]' '/<version>/ {print $3; exit}' pom.xml)}"
@@ -100,6 +99,40 @@ detect_modules() {
   fi
 }
 
+native_path() {
+  if command -v cygpath > /dev/null 2>&1; then
+    cygpath -w "$1"
+  else
+    echo "$1"
+  fi
+}
+
+find_iscc() {
+  if [ -n "${ISCC:-}" ]; then
+    echo "$ISCC"
+    return
+  fi
+  local candidate
+  for candidate in iscc ISCC.exe; do
+    if command -v "$candidate" > /dev/null 2>&1; then
+      command -v "$candidate"
+      return
+    fi
+  done
+  for candidate in "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/c/Program Files/Inno Setup 6/ISCC.exe" "${LOCALAPPDATA:-}/Programs/Inno Setup 6/ISCC.exe"; do
+    if [ -f "$candidate" ]; then
+      echo "$candidate"
+      return
+    fi
+  done
+  if [ "$DRY_RUN" = "1" ]; then
+    echo "iscc"
+    return
+  fi
+  echo "Inno Setup 6 (ISCC.exe) was not found. Install it from https://jrsoftware.org/isdl.php or set the ISCC variable." >&2
+  exit 1
+}
+
 pick_output() {
   local pattern="$1"
   local match
@@ -167,26 +200,16 @@ run jpackage "${IMAGE_OPTS[@]}"
 
 case "$OS" in
   windows)
-    run jpackage --type msi \
-      --app-image "$IMAGE/$APP_NAME" \
-      --dest "$RAW" \
-      --name "$APP_NAME" \
-      --app-version "$APP_VERSION" \
-      --vendor "$VENDOR" \
-      --description "$DESCRIPTION" \
-      --copyright "$COPYRIGHT" \
-      --icon "$ICON" \
-      --license-file LICENSE \
-      --win-menu \
-      --win-menu-group "JByteMod ReForked" \
-      --win-shortcut \
-      --win-dir-chooser \
-      --win-per-user-install \
-      --win-upgrade-uuid "$WIN_UPGRADE_UUID"
+    ISCC_BIN="$(find_iscc)"
+    run "$ISCC_BIN" \
+      "/DAppVersion=$APP_VERSION" \
+      "/DSourceDir=$(native_path "$ROOT/$IMAGE/$APP_NAME")" \
+      "/DOutputDir=$(native_path "$ROOT/$OUT")" \
+      "/DOutputName=${BASENAME}-windows-${ARCH}-setup" \
+      "/DIconFile=$(native_path "$ROOT/$ICON")" \
+      "/DLicenseFile=$(native_path "$ROOT/LICENSE")" \
+      "$(native_path "$ROOT/packaging/windows/installer.iss")"
     run jar --create --no-manifest --file "$OUT/${BASENAME}-windows-${ARCH}-portable.zip" -C "$IMAGE" "$APP_NAME"
-    if [ "$DRY_RUN" != "1" ]; then
-      mv "$(pick_output '*.msi')" "$OUT/${BASENAME}-windows-${ARCH}.msi"
-    fi
     ;;
   linux)
     run jpackage --type deb \

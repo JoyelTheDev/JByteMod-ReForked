@@ -1,6 +1,11 @@
-# JByteMod ReForked
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo/logo-horizontal-dark.svg">
+    <img alt="JByteMod ReForked" src="docs/logo/logo-horizontal-light.svg" width="480">
+  </picture>
+</h1>
 
-[![Build](https://github.com/constnulled/JByteMod-ReForked/actions/workflows/master.yml/badge.svg)](https://github.com/constnulled/JByteMod-ReForked/releases/)
+[![Build](https://github.com/constnulled/JByteMod-ReForked/actions/workflows/release.yml/badge.svg)](https://github.com/constnulled/JByteMod-ReForked/releases/)
 [![Version](https://img.shields.io/badge/version-2.9.4-blue)](https://github.com/constnulled/JByteMod-ReForked/releases)
 [![Java](https://img.shields.io/badge/Java-25%2B-orange)](https://openjdk.org/projects/jdk/25/)
 [![License](https://img.shields.io/badge/license-GPL--2.0-green)](LICENSE)
@@ -82,9 +87,24 @@ Extend the editor by dropping a `.jar` into the `plugins/` folder. Plugins recei
 
 ---
 
+## Installation
+
+Download the newest build from the [Latest Build release](../../releases/tag/latest):
+
+| Platform | Download |
+|----------|----------|
+| Windows | `.exe` installer or portable `.zip` |
+| macOS | `.dmg` |
+| Linux | `.deb` package or portable `.tar.gz` |
+| Any OS | `.jar` (requires JDK 25) |
+
+The installers and portable archives bundle their own Java runtime, so nothing else needs to be installed. They are not code-signed: Windows SmartScreen may show a warning (choose **More info → Run anyway**) and on macOS you may need to right-click the app and choose **Open** the first time. Checksums for every release are published in the `SHA256SUMS-*.txt` files.
+
+---
+
 ## Requirements
 
-- **JDK 25** or higher (for both building and running)
+- **JDK 25** or higher (for building, and for running the plain `.jar`; the installers do not need it)
 - Maven 3.9+ (for building from source only)
 
 ---
@@ -92,7 +112,7 @@ Extend the editor by dropping a `.jar` into the `plugins/` folder. Plugins recei
 ## Usage
 
 ```sh
-java -jar JByteMod-Remastered.jar
+java -jar JByteMod-ReForked-<version>.jar
 ```
 
 | Flag | Long form | Description |
@@ -115,6 +135,31 @@ mvn clean package
 ```
 
 The shaded JAR is written to `target/`. The build requires network access to resolve snapshot dependencies from the OW2 and Sonatype repositories.
+
+### Building installers
+
+After `mvn clean package`, build a native installer for the operating system you are on:
+
+```sh
+bash packaging/build-installer.sh
+```
+
+Results are written to `target/installers/`. This needs a JDK 25 with `jpackage` on the `PATH`, plus the usual platform tooling: [Inno Setup 6](https://jrsoftware.org/isdl.php) on Windows (`.exe` installer and portable `.zip`), `fakeroot` on Linux (`.deb` and portable `.tar.gz`), and Xcode command line tools on macOS (`.dmg`). On Windows run the script from Git Bash.
+
+Set `DRY_RUN=1` to print the `jpackage` commands without running them.
+
+---
+
+## Releasing
+
+Releases are fully automatic and there is only ever one: **JByteMod ReForked Latest Build** (tag `latest`). Every push to `master` runs the **release** workflow, which:
+
+1. Builds the jar with Maven, removes the previous latest release, and publishes a fresh one with release notes and the newest commits.
+2. Builds the Windows, Linux and macOS installers in parallel and attaches each one to that release as soon as it is ready, together with a `SHA256SUMS-*.txt` checksum file per platform.
+
+Nothing is uploaded as a workflow artifact; every file goes straight onto the release with `softprops/action-gh-release`. Because the release is replaced on every push, the Releases page always shows the newest files at the top and no per-build tags pile up.
+
+To change the version number shown in the app and in the installer file names, run `bash packaging/bump-version.sh 2.9.5` and commit the result; the next push picks it up. The workflow can also be started by hand from the **Actions** tab. Pull requests and other branches run the **ci** workflow, which builds the project and smoke-tests packaging without publishing anything.
 
 ---
 

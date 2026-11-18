@@ -72,7 +72,7 @@ jobs:
             echo
             echo "| Platform | File |"
             echo "|----------|------|"
-            echo "| Windows installer | \`JByteMod-ReForked-${VERSION}-windows-x64.msi\` |"
+            echo "| Windows installer | \`JByteMod-ReForked-${VERSION}-windows-x64-setup.exe\` |"
             echo "| Windows portable | \`JByteMod-ReForked-${VERSION}-windows-x64-portable.zip\` |"
             echo "| macOS | \`JByteMod-ReForked-${VERSION}-macos-arm64.dmg\` |"
             echo "| Linux (Debian/Ubuntu) | \`JByteMod-ReForked-${VERSION}-linux-x64.deb\` |"
@@ -139,13 +139,13 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package --file pom.xml
 
-      - name: Install WiX Toolset
+      - name: Install Inno Setup
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          choco install wixtoolset --no-progress -y
-          $wix = Get-ChildItem "C:\Program Files (x86)" -Directory -Filter "WiX Toolset*" | Select-Object -First 1
-          "$($wix.FullName)\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          choco install innosetup --no-progress -y
+          $inno = Get-ChildItem "C:\Program Files (x86)", "C:\Program Files" -Directory -Filter "Inno Setup*" -ErrorAction SilentlyContinue | Select-Object -First 1
+          $inno.FullName | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Install Linux packaging tools
         if: runner.os == 'Linux'
