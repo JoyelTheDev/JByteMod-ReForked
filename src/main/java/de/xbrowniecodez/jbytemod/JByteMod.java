@@ -2,8 +2,6 @@ package de.xbrowniecodez.jbytemod;
 
 import com.sun.tools.attach.VirtualMachine;
 import dev.joyel.theme.ThemeManager;
-import dev.joyel.welcome.RecentFiles;
-import dev.joyel.welcome.WelcomePanel;
 import de.xbrowniecodez.jbytemod.ui.FileDropSupport;
 import de.xbrowniecodez.jbytemod.utils.BytecodeUtils;
 import de.xbrowniecodez.jbytemod.utils.Utils;
@@ -55,9 +53,7 @@ import java.util.LinkedHashMap;
 
 @Getter
 @Setter
-public class JByteMod extends JFrame {
-    private static final String CARD_WELCOME = "welcome";
-    private static final String CARD_WORKSPACE = "workspace";
+public class JByteMod extends JFrame {}
 
     private final Version version = new Version(Utils.readPropertiesFile().getProperty("version"));
     private final String title = "JByteMod ReForked v" + version;
@@ -83,9 +79,6 @@ public class JByteMod extends JFrame {
     private MethodNode currentMethod;
     private PluginManager pluginManager;
     private File filePath;
-    private WelcomePanel welcomePanel;
-    private JPanel centerPanel;
-    private CardLayout centerCards;
 
     public JByteMod(boolean agent) throws Exception {
         this.options = new Options();
@@ -138,36 +131,8 @@ public class JByteMod extends JFrame {
         b2.setLayout(new GridLayout());
         b2.add(splitPane);
         borderPanel.add(b2);
-        welcomePanel = new WelcomePanel(version.toString(),
-                () -> myMenuBar.openLoadDialogue(),
-                () -> myMenuBar.openProcessSelection(),
-                this::loadFile);
-        centerCards = new CardLayout();
-        centerPanel = new JPanel(centerCards);
-        centerPanel.add(welcomePanel, CARD_WELCOME);
-        centerPanel.add(borderPanel, CARD_WORKSPACE);
-        container.add(centerPanel, BorderLayout.CENTER);
-        if (agent || jarArchive != null) {
-            showWorkspace();
-        } else {
-            showWelcome();
-        }
-    }
-
-    public void showWelcome() {
-        if (centerCards == null) {
-            return;
-        }
-        welcomePanel.refresh();
-        centerCards.show(centerPanel, CARD_WELCOME);
-    }
-
-    public void showWorkspace() {
-        if (centerCards == null) {
-            return;
-        }
-        centerCards.show(centerPanel, CARD_WORKSPACE);
-    }
+        container.add(borderPanel, BorderLayout.CENTER);
+     }
 
     private void handleWindowClosing(boolean agent) {
         if (JOptionPane.showConfirmDialog(JByteMod.this, languageRes.getResource("exit_warn"), languageRes.getResource("is_sure"),
