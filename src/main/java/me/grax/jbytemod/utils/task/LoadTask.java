@@ -25,6 +25,14 @@ import java.util.*;
 
 public class LoadTask extends SwingWorker<Void, Integer> {
 
+    public interface Listener {
+        void onLoaded();
+
+        void onFailed(Throwable error);
+    }
+
+    private final Listener listener;
+
     private static final int BAD_CLASS_THRESHOLD = 80;
     private static final double HIGH_MEMORY_RATIO = 0.75;
 
@@ -42,6 +50,11 @@ public class LoadTask extends SwingWorker<Void, Integer> {
     private int junkClasses;
 
     public LoadTask(JByteMod jbm, File input, JarArchive ja) {
+        this(jbm, input, ja, null);
+    }
+
+    public LoadTask(JByteMod jbm, File input, JarArchive ja, Listener listener) {
+        this.listener = listener;
         try {
             this.othersFile = 0;
             this.startTime = System.currentTimeMillis();
@@ -56,7 +69,11 @@ public class LoadTask extends SwingWorker<Void, Integer> {
             this.maxMem = Runtime.getRuntime().maxMemory();
             this.memoryWarning = Main.INSTANCE.getJByteMod().getOptions().get("memory_warning").getBoolean();
         } catch (IOException e) {
-            new ErrorDisplay(e);
+            if (listener != null) {
+                listener.onFailed(e);
+            } else {
+                new ErrorDisplay(e);
+            }
         }
     }
 
@@ -238,11 +255,25 @@ public class LoadTask extends SwingWorker<Void, Integer> {
 
     @Override
     protected void done() {
+        try {
+            get();
+        } catch (Throwable t) {
+            Throwable cause = t.getCause() != null ? t.getCause() : t;
+            if (listener != null) {
+                listener.onFailed(cause);
+            } else {
+                new ErrorDisplay(cause);
+            }
+            return;
+        }
         Main.INSTANCE.getJByteMod().setLastEditFile(file.getName());
         Main.INSTANCE.getDiscord().updatePresence("Working on " + file.getName(), "Idle ...");
         Main.INSTANCE.getLogger().log("Successfully loaded file!");
         jbm.refreshTree();
         Main.INSTANCE.getLogger().log("Tree refreshed.");
         Main.INSTANCE.getLogger().log("Loaded classes in " + (System.currentTimeMillis() - startTime) + "ms" + ", bypassed " + othersFile + " files because I can't load them. (Include " + junkClasses + " junk classes.)");
+        if (listener != null) {
+            listener.onLoaded();
+        }
     }
 }

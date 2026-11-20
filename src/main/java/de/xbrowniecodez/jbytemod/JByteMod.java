@@ -251,6 +251,14 @@ public class JByteMod extends JFrame {
         this.refreshTree();
     }
 
+    public void showWorkspace() {
+        if (tabbedPane != null && tabbedPane.getTabCount() > 0 && tabbedPane.getSelectedIndex() < 0) {
+            tabbedPane.setSelectedIndex(0);
+        }
+        getContentPane().revalidate();
+        getContentPane().repaint();
+    }
+
     public void refreshTree() {
         Main.INSTANCE.getLogger().log("Building tree..");
         this.jarTree.refreshTree(jarArchive);

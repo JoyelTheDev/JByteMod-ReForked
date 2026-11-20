@@ -26,10 +26,18 @@ public class JarArchive {
     }
 
     public JarArchive(JByteMod jbm, File input) {
+        this(jbm, input, null);
+    }
+
+    public JarArchive(JByteMod jbm, File input, LoadTask.Listener listener) {
         try {
-            new LoadTask(jbm, input, this).execute();
+            new LoadTask(jbm, input, this, listener).execute();
         } catch (Throwable t) {
-            new ErrorDisplay(t);
+            if (listener != null) {
+                listener.onFailed(t);
+            } else {
+                new ErrorDisplay(t);
+            }
         }
     }
 
