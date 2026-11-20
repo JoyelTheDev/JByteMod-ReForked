@@ -45,7 +45,7 @@ jobs:
           fi
 
       - name: Build with Maven
-        run: mvn -B clean package --file pom.xml
+        run: mvn -B clean package -U --file pom.xml
 
       - name: Prepare jar
         shell: bash
@@ -146,7 +146,7 @@ jobs:
           cache: maven
 
       - name: Build with Maven
-        run: mvn -B clean package --file pom.xml
+        run: mvn -B clean package -U --file pom.xml
 
       - name: Install Inno Setup
         if: runner.os == 'Windows'
