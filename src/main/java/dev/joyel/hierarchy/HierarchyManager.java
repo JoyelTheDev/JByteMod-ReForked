@@ -1,15 +1,19 @@
 package dev.joyel.hierarchy;
 
 import me.grax.jbytemod.JarArchive;
+import org.objectweb.asm.tree.ClassNode;
 
 import javax.swing.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public enum HierarchyManager {
     INSTANCE;
 
     private volatile HierarchyIndex currentIndex;
-    private final AtomicBoolean building = new AtomicBoolean(false);
+    private final AtomicLong generation = new AtomicLong();
+    private final AtomicInteger running = new AtomicInteger();
 
     public static HierarchyManager getInstance() {
         return INSTANCE;
@@ -17,21 +21,26 @@ public enum HierarchyManager {
 
     public void buildAsync(JarArchive archive, Runnable onComplete) {
         if (archive == null || archive.getClasses() == null) return;
-        if (!building.compareAndSet(false, true)) return;
+        final long ticket = generation.incrementAndGet();
+        final Map<String, ClassNode> classes = archive.getClasses();
+        running.incrementAndGet();
 
         new SwingWorker<HierarchyIndex, Void>() {
             @Override
             protected HierarchyIndex doInBackground() {
-                return HierarchyIndex.build(archive.getClasses());
+                return HierarchyIndex.build(classes);
             }
 
             @Override
             protected void done() {
                 try {
-                    currentIndex = get();
+                    HierarchyIndex built = get();
+                    if (ticket == generation.get()) {
+                        currentIndex = built;
+                    }
                 } catch (Exception ignored) {
                 } finally {
-                    building.set(false);
+                    running.decrementAndGet();
                     if (onComplete != null) {
                         SwingUtilities.invokeLater(onComplete);
                     }
@@ -42,10 +51,12 @@ public enum HierarchyManager {
 
     public void buildSync(JarArchive archive) {
         if (archive == null || archive.getClasses() == null) return;
+        generation.incrementAndGet();
         currentIndex = HierarchyIndex.build(archive.getClasses());
     }
 
     public void clear() {
+        generation.incrementAndGet();
         currentIndex = null;
     }
 
@@ -54,7 +65,7 @@ public enum HierarchyManager {
     }
 
     public boolean isBuilding() {
-        return building.get();
+        return running.get() > 0;
     }
 
     public HierarchyIndex getIndex() {

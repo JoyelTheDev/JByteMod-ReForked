@@ -125,6 +125,10 @@ public class MyEditorTab extends JPanel {
 
     public void selectMethod(ClassNode cn, MethodNode mn) {
         breadcrumbs.setSelection(cn, mn);
+        if (mn == null) {
+            selectClass(cn);
+            return;
+        }
         Main.INSTANCE.getDiscord().updatePresence("Working on " + Main.INSTANCE.getJByteMod().getLastEditFile(), "Editing " + cn.name + "." + mn.name);
 
         String selectedComponentName = center.getComponent(0).getName();

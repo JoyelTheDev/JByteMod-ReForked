@@ -642,10 +642,16 @@ public class MyMenuBar extends JMenuBar {
                 XrefManager.getInstance().buildAsync(jbm.getJarArchive(), () -> {
                         rebuildXref.setText("Rebuild Xref Index");
                         rebuildXref.setEnabled(true);
+                        me.grax.jbytemod.xref.XrefMap map = XrefManager.getInstance().getCurrentMap();
+                        if (map == null) {
+                            JOptionPane.showMessageDialog(jbm, "The xref index could not be built.",
+                                    "Xref Index", JOptionPane.WARNING_MESSAGE);
+                            return;
+                        }
                         JOptionPane.showMessageDialog(jbm,
                                 "Xref index rebuilt.\n" +
-                                        XrefManager.getInstance().getCurrentMap().getAllMemberRefs().size() + " member refs\n" +
-                                        XrefManager.getInstance().getCurrentMap().getAllClassRefs().size() + " class refs",
+                                        map.getAllMemberRefs().size() + " member refs\n" +
+                                        map.getAllClassRefs().size() + " class refs",
                                 "Xref Index Ready", JOptionPane.INFORMATION_MESSAGE);
                     });
             }
@@ -947,9 +953,11 @@ public class MyMenuBar extends JMenuBar {
     public boolean isAgent() { 
         return agent; 
     }
+    
     public File getLastFile() { 
         return lastFile; 
     }
+    
     public void setLastFile(File lastFile) { 
         this.lastFile = lastFile; 
     }

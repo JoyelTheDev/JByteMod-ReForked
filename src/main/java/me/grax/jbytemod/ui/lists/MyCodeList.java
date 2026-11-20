@@ -684,6 +684,9 @@ public class MyCodeList extends JList<InstrEntry> {
     }
 
     public boolean loadInstructions(MethodNode m) {
+        if (m == null) {
+            return false;
+        }
         this.currentMethod = m;
         this.currentClass = null;
         LazyListModel<InstrEntry> lm = new LazyListModel<InstrEntry>();

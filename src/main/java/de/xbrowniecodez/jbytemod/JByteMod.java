@@ -2,6 +2,8 @@ package de.xbrowniecodez.jbytemod;
 
 import com.sun.tools.attach.VirtualMachine;
 import dev.joyel.theme.ThemeManager;
+import dev.joyel.welcome.RecentFiles;
+import dev.joyel.welcome.WelcomePanel;
 import de.xbrowniecodez.jbytemod.ui.FileDropSupport;
 import de.xbrowniecodez.jbytemod.utils.BytecodeUtils;
 import de.xbrowniecodez.jbytemod.utils.Utils;
@@ -12,6 +14,7 @@ import de.xbrowniecodez.jbytemod.plugin.Plugin;
 import de.xbrowniecodez.jbytemod.plugin.PluginManager;
 import dev.joyel.hierarchy.HierarchyManager;
 import me.grax.jbytemod.xref.XrefManager;
+import me.grax.jbytemod.xref.XrefMap;
 import me.grax.jbytemod.JarArchive;
 import me.grax.jbytemod.res.LanguageRes;
 import me.grax.jbytemod.res.Options;
@@ -24,6 +27,7 @@ import de.xbrowniecodez.jbytemod.ui.lists.SearchList;
 import de.xbrowniecodez.jbytemod.ui.lists.TCBList;
 import me.grax.jbytemod.ui.tree.SortedTreeNode;
 import me.grax.jbytemod.utils.ErrorDisplay;
+import me.grax.jbytemod.utils.task.LoadTask;
 import me.grax.jbytemod.utils.gui.LookUtils;
 import me.grax.jbytemod.utils.task.AttachTask;
 import me.grax.jbytemod.utils.task.RetransformTask;
@@ -52,6 +56,9 @@ import java.util.LinkedHashMap;
 @Getter
 @Setter
 public class JByteMod extends JFrame {
+    private static final String CARD_WELCOME = "welcome";
+    private static final String CARD_WORKSPACE = "workspace";
+
     private final Version version = new Version(Utils.readPropertiesFile().getProperty("version"));
     private final String title = "JByteMod ReForked v" + version;
     private LanguageRes languageRes;
@@ -76,6 +83,9 @@ public class JByteMod extends JFrame {
     private MethodNode currentMethod;
     private PluginManager pluginManager;
     private File filePath;
+    private WelcomePanel welcomePanel;
+    private JPanel centerPanel;
+    private CardLayout centerCards;
 
     public JByteMod(boolean agent) throws Exception {
         this.options = new Options();
@@ -107,7 +117,7 @@ public class JByteMod extends JFrame {
         setContentPane(contentPane);
         setTcbList(new TCBList());
         setLvpList(new LVPList());
-        createSplitPane(contentPane);
+        createSplitPane(contentPane, agent);
         contentPane.add(pageEndPanel = new PageEndPanel(), BorderLayout.PAGE_END);
         contentPane.add(new MyToolBar(this), BorderLayout.PAGE_START);
 
@@ -118,7 +128,7 @@ public class JByteMod extends JFrame {
         FileDropSupport.install(this, this::loadFile);
     }
 
-    private void createSplitPane(Container container) {
+    private void createSplitPane(Container container, boolean agent) {
         JPanel borderPanel = new JPanel();
         borderPanel.setBorder(null);
         borderPanel.setLayout(new GridLayout());
@@ -128,7 +138,35 @@ public class JByteMod extends JFrame {
         b2.setLayout(new GridLayout());
         b2.add(splitPane);
         borderPanel.add(b2);
-        container.add(borderPanel, BorderLayout.CENTER);
+        welcomePanel = new WelcomePanel(version.toString(),
+                () -> myMenuBar.openLoadDialogue(),
+                () -> myMenuBar.openProcessSelection(),
+                this::loadFile);
+        centerCards = new CardLayout();
+        centerPanel = new JPanel(centerCards);
+        centerPanel.add(welcomePanel, CARD_WELCOME);
+        centerPanel.add(borderPanel, CARD_WORKSPACE);
+        container.add(centerPanel, BorderLayout.CENTER);
+        if (agent || jarArchive != null) {
+            showWorkspace();
+        } else {
+            showWelcome();
+        }
+    }
+
+    public void showWelcome() {
+        if (centerCards == null) {
+            return;
+        }
+        welcomePanel.refresh();
+        centerCards.show(centerPanel, CARD_WELCOME);
+    }
+
+    public void showWorkspace() {
+        if (centerCards == null) {
+            return;
+        }
+        centerCards.show(centerPanel, CARD_WORKSPACE);
     }
 
     private void handleWindowClosing(boolean agent) {
@@ -158,7 +196,6 @@ public class JByteMod extends JFrame {
      * Load .jar, .class or .apk file
      */
     public void loadFile(File input) {
-        this.filePath = input;
         String ap = input.getAbsolutePath().toLowerCase(Locale.ROOT);
 
         try {
@@ -166,12 +203,10 @@ public class JByteMod extends JFrame {
                 loadZipFile(input);
             } else if (ap.endsWith(".class")) {
                 loadClassFile(input);
+                onFileLoaded(input);
             } else {
                 displayJarWarning();
             }
-
-            notifyPlugins();
-            Main.INSTANCE.getLogger().successNotification("Loaded " + input.getName());
         } catch (Throwable e) {
             Main.INSTANCE.getLogger().errNotification("Failed to load " + input.getName());
             new ErrorDisplay(e);
@@ -179,26 +214,53 @@ public class JByteMod extends JFrame {
     }
 
     private void loadZipFile(File input) {
-        jarArchive = new JarArchive(this, input);
-        setTitleSuffix(input.getName());
-        buildXrefIndex();
+        final JarArchive previous = jarArchive;
+        final JarArchive[] loading = new JarArchive[1];
+        loading[0] = new JarArchive(this, input, new LoadTask.Listener() {
+            @Override
+            public void onLoaded() {
+                if (jarArchive == loading[0]) {
+                    onFileLoaded(input);
+                }
+            }
+
+            @Override
+            public void onFailed(Throwable error) {
+                if (jarArchive == loading[0] || jarArchive == null) {
+                    jarArchive = previous;
+                }
+                Main.INSTANCE.getLogger().errNotification("Failed to load " + input.getName());
+                new ErrorDisplay(error);
+            }
+        });
+        jarArchive = loading[0];
     }
 
     private void loadClassFile(File input) throws Exception {
         jarArchive = new JarArchive(BytecodeUtils.getClassNodeFromBytes(Files.readAllBytes(input.toPath())));
-        setTitleSuffix(input.getName());
         refreshTree();
-        buildXrefIndex();
     }
 
-    private void buildXrefIndex() {
+    private void onFileLoaded(File input) {
+        this.filePath = input;
+        setTitleSuffix(input.getName());
+        RecentFiles.getInstance().add(input);
+        buildIndexes();
+        notifyPlugins();
+        Main.INSTANCE.getLogger().successNotification("Loaded " + input.getName());
+    }
+
+    public void buildIndexes() {
+        XrefManager.getInstance().clear();
+        HierarchyManager.getInstance().clear();
         Main.INSTANCE.getLogger().log("Building Xref index...");
-        XrefManager.getInstance().buildAsync(jarArchive, () ->
-                Main.INSTANCE.getLogger().log("Xref index built (" +
-                        XrefManager.getInstance().getCurrentMap().getAllMemberRefs().size() +
-                        " member refs, " +
-                        XrefManager.getInstance().getCurrentMap().getAllClassRefs().size() +
-                        " class refs)."));
+        XrefManager.getInstance().buildAsync(jarArchive, () -> {
+            XrefMap map = XrefManager.getInstance().getCurrentMap();
+            if (map != null) {
+                Main.INSTANCE.getLogger().log("Xref index built (" + map.getAllMemberRefs().size()
+                        + " member refs, " + map.getAllClassRefs().size() + " class refs).");
+            }
+        });
         Main.INSTANCE.getLogger().log("Building Hierarchy index...");
         HierarchyManager.getInstance().buildAsync(jarArchive, () ->
                 Main.INSTANCE.getLogger().log("Hierarchy index built."));
@@ -210,7 +272,11 @@ public class JByteMod extends JFrame {
 
     private void notifyPlugins() {
         for (Plugin p : pluginManager.getPlugins()) {
-            p.loadFile(jarArchive.getClasses());
+            try {
+                p.loadFile(jarArchive.getClasses());
+            } catch (Throwable t) {
+                Main.INSTANCE.getLogger().err("Plugin failed while handling the loaded file: " + t);
+            }
         }
     }
 
@@ -224,6 +290,9 @@ public class JByteMod extends JFrame {
     public void refreshTree() {
         Main.INSTANCE.getLogger().log("Building tree..");
         this.jarTree.refreshTree(jarArchive);
+        if (jarArchive != null) {
+            showWorkspace();
+        }
         if (pageEndPanel != null && jarArchive != null && jarArchive.getClasses() != null) {
             pageEndPanel.setClassCount(jarArchive.getClasses().size());
         }
@@ -273,6 +342,13 @@ public class JByteMod extends JFrame {
     }
 
     public void selectMethod(ClassNode cn, MethodNode mn) {
+        if (cn == null) {
+            return;
+        }
+        if (mn == null) {
+            selectClass(cn);
+            return;
+        }
         if (Main.INSTANCE.getJByteMod().getOptions().get("select_code_tab").getBoolean()) {
             tabbedPane.setSelectedIndex(0);
         }

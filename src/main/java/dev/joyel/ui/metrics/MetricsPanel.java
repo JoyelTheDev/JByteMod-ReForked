@@ -162,6 +162,9 @@ public class MetricsPanel extends JPanel {
 
     public void showMethodMetrics(ClassNode cn, MethodNode mn) {
         showClassMetrics(cn);
+        if (mn == null) {
+            return;
+        }
         String target = mn.name + mn.desc;
         for (int i = 0; i < methodTableModel.getRowCount(); i++) {
             if (target.equals(methodTableModel.getValueAt(i, 0))) {
