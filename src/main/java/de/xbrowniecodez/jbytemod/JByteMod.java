@@ -396,4 +396,3 @@ public class JByteMod extends JFrame {}
             }
         }).start();
     }
-}
