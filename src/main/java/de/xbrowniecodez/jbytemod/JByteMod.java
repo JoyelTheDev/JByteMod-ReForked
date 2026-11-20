@@ -53,8 +53,7 @@ import java.util.LinkedHashMap;
 
 @Getter
 @Setter
-public class JByteMod extends JFrame {}
-
+public class JByteMod extends JFrame {
     private final Version version = new Version(Utils.readPropertiesFile().getProperty("version"));
     private final String title = "JByteMod ReForked v" + version;
     private LanguageRes languageRes;
@@ -88,9 +87,9 @@ public class JByteMod extends JFrame {}
     public void initializeFrame(boolean agent) {
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent we) {
-                handleWindowClosing(agent);
+    @Override
+    public void windowClosing(WindowEvent we) {
+         handleWindowClosing(agent);
             }
         });
 
@@ -396,3 +395,4 @@ public class JByteMod extends JFrame {}
             }
         }).start();
     }
+}
