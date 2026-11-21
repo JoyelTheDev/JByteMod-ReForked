@@ -1,82 +1,121 @@
 package me.grax.jbytemod.utils.task;
 
 import com.sun.tools.attach.VirtualMachine;
-import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import me.grax.jbytemod.ui.PageEndPanel;
-import me.grax.jbytemod.utils.attach.InjectUtils;
+import me.grax.jbytemod.utils.ErrorDisplay;
+import dev.joyel.attach.AgentJarBuilder;
+import dev.joyel.attach.AgentServer;
+import dev.joyel.attach.RemoteAgentConnection;
+import dev.joyel.attach.RemoteJarArchive;
 
-import javax.swing.*;
+import javax.swing.SwingWorker;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.util.Enumeration;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Base64;
 import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.function.IntConsumer;
 
-public class AttachTask extends SwingWorker<Void, Integer> {
+public class AttachTask extends SwingWorker<RemoteJarArchive, Integer> {
 
-    private VirtualMachine vm;
-    private PageEndPanel jpb;
+    private final VirtualMachine vm;
+    private final JByteMod jbm;
+    private final PageEndPanel jpb;
 
     public AttachTask(JByteMod jbm, VirtualMachine vm) {
+        this.jbm = jbm;
         this.vm = vm;
         this.jpb = jbm.getPageEndPanel();
     }
 
-    public int countFiles(final JarFile zipFile) {
-        final Enumeration<? extends JarEntry> entries = zipFile.entries();
-        int c = 0;
-        while (entries.hasMoreElements()) {
-            entries.nextElement();
-            ++c;
+    @Override
+    protected RemoteJarArchive doInBackground() throws Exception {
+        return attach(vm, this::publish);
+    }
+
+    public static RemoteJarArchive attach(VirtualMachine vm, IntConsumer progress) throws Exception {
+        progress.accept(1);
+        try {
+            RemoteAgentConnection connection = connectToReusableAgent(vm);
+            if (connection == null) {
+                File temp = File.createTempFile("jvm", ".jar");
+                temp.deleteOnExit();
+                File errorFile = new File(temp.getAbsolutePath() + ".error.log");
+                errorFile.deleteOnExit();
+                try (RemoteAgentConnection.Listener listener = RemoteAgentConnection.listen()) {
+                    AgentJarBuilder.createAgentJar(temp);
+                    progress.accept(12);
+                    String token = UUID.randomUUID().toString();
+                    String encodedPath = Base64.getUrlEncoder().withoutPadding()
+                            .encodeToString(temp.getAbsolutePath().getBytes(StandardCharsets.UTF_8));
+                    String options = encodedPath + ";" + listener.getPort() + ";" + token;
+                    progress.accept(18);
+                    try {
+                        vm.loadAgent(temp.getAbsolutePath(), options);
+                    } catch (Exception exception) {
+                        if (errorFile.isFile()) {
+                            String targetError = Files.readString(errorFile.toPath(), StandardCharsets.UTF_8);
+                            throw new IOException("The agent failed inside the target JVM:\n\n" + targetError, exception);
+                        }
+                        throw exception;
+                    }
+                    connection = listener.accept(token);
+                }
+            }
+            progress.accept(22);
+            return createArchive(connection, vm.id(), progress);
+        } finally {
+            vm.detach();
         }
-        return c;
+    }
+
+    private static RemoteAgentConnection connectToReusableAgent(VirtualMachine vm) throws Exception {
+        Properties properties = vm.getAgentProperties();
+        if (!AgentServer.PROTOCOL.equals(properties.getProperty(AgentServer.PROTOCOL_PROPERTY))) {
+            return null;
+        }
+        String portValue = properties.getProperty(AgentServer.PORT_PROPERTY);
+        String token = properties.getProperty(AgentServer.TOKEN_PROPERTY);
+        if (portValue == null || token == null || token.isBlank()) {
+            return null;
+        }
+        try {
+            return RemoteAgentConnection.connect(Integer.parseInt(portValue), token);
+        } catch (RemoteAgentConnection.AgentBusyException exception) {
+            throw exception;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static RemoteJarArchive createArchive(RemoteAgentConnection connection, String processId,
+                                                  IntConsumer progress) throws Exception {
+        try {
+            RemoteJarArchive archive = new RemoteJarArchive(connection, Long.parseLong(processId),
+                    value -> progress.accept(25 + value * 74 / 100));
+            progress.accept(100);
+            return archive;
+        } catch (Exception exception) {
+            connection.close();
+            throw exception;
+        }
     }
 
     @Override
-    protected Void doInBackground() throws Exception {
-        publish(0);
-        File temp = File.createTempFile("jvm", ".jar");
-
-        File self = new File(JByteMod.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
-        if (self.getAbsolutePath().endsWith(".jar")) {
-            JOptionPane.showMessageDialog(null, Main.INSTANCE.getJByteMod().getLanguageRes().getResource("injecting_msg"));
-            JarFile jbytemod = new JarFile(self);
-            double size = countFiles(jbytemod);
-            ZipOutputStream output = new ZipOutputStream(new FileOutputStream(temp));
-            Enumeration<? extends ZipEntry> entries = jbytemod.entries();
-            int i = 0;
-            while (entries.hasMoreElements()) {
-                publish((int) ((i / size) * 100d));
-                ZipEntry e = entries.nextElement();
-                if (!e.getName().equals("META-INF/MANIFEST.MF")) {
-                    output.putNextEntry(e);
-                    if (!e.isDirectory()) {
-                        InjectUtils.copy(jbytemod.getInputStream(e), output);
-                    }
-                    output.closeEntry();
-                }
-                i++;
-            }
-            ZipEntry e = new ZipEntry("META-INF/MANIFEST.MF");
-            output.putNextEntry(e);
-            output.write(("Manifest-Version: 1.0\nAgent-Class: " + JByteMod.class.getName()
-                    + "\nCan-Redefine-Classes: true\nCan-Retransform-Classes: true\nCan-Set-Native-Method-Prefix: false\n").getBytes());
-            output.closeEntry();
-            jbytemod.close();
-            output.close();
-            publish(100);
-            Main.INSTANCE.getJByteMod().dispose();
-            vm.loadAgent(temp.getAbsolutePath(), self.getParent());
-            temp.deleteOnExit();
-        } else {
-            JOptionPane.showMessageDialog(null, Main.INSTANCE.getJByteMod().getLanguageRes().getResource("no_jar_found"));
+    protected void done() {
+        try {
+            jbm.connectToAgent(get());
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException exception) {
+            Throwable cause = exception.getCause() == null ? exception : exception.getCause();
+            new ErrorDisplay(cause);
         }
-        publish(100);
-        return null;
     }
 
     @Override

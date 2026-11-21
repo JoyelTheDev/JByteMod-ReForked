@@ -666,12 +666,14 @@ public class MyMenuBar extends JMenuBar {
 
     public void openProcessSelection() {
         try {
-            List<VirtualMachineDescriptor> list = VirtualMachine.list();
+            List<VirtualMachineDescriptor> list = new ArrayList<>(VirtualMachine.list());
+            String currentPid = Long.toString(ProcessHandle.current().pid());
+            list.removeIf(descriptor -> descriptor.id().equals(currentPid));
             VirtualMachine vm = null;
             if (list.isEmpty()) {
                 String pid = JOptionPane.showInputDialog(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("no_vm_found"));
                 if (pid != null && !pid.isEmpty()) {
-                    vm = AttachUtils.getVirtualMachine(Integer.parseInt(pid));
+                    vm = AttachUtils.getVirtualMachine(Integer.parseInt(pid.trim()));
                 }
             } else {
                 JProcessSelection gui = new JProcessSelection(list);
@@ -680,12 +682,18 @@ public class MyMenuBar extends JMenuBar {
                     vm = AttachUtils.getVirtualMachine(gui.getPid());
                 }
             }
-            if (vm != null) jbm.attachTo(vm);
+            if (vm != null) {
+                jbm.attachTo(vm);
+            }
         } catch (UnsatisfiedLinkError exception) {
             JOptionPane.showMessageDialog(null, "Failed to attach. Please use JDK as runtime.");
         } catch (Throwable t) {
-            if (t.getMessage() != null) {
-                JOptionPane.showMessageDialog(null, "<" + t.getMessage() + "> " + Main.INSTANCE.getJByteMod().getLanguageRes().getResource("attach_error"));
+            Throwable cause = t;
+            while (cause.getCause() != null && cause.getCause() != cause) {
+                cause = cause.getCause();
+            }
+            if (cause.getMessage() != null) {
+                JOptionPane.showMessageDialog(null, "Failed to attach: " + cause.getMessage());
             } else {
                 new ErrorDisplay(t);
             }

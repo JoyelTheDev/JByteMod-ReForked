@@ -6,6 +6,7 @@ import de.xbrowniecodez.jbytemod.JByteMod;
 import me.grax.jbytemod.JarArchive;
 import me.grax.jbytemod.ui.PageEndPanel;
 import me.grax.jbytemod.utils.ErrorDisplay;
+import dev.joyel.attach.RemoteJarArchive;
 import org.objectweb.asm.tree.ClassNode;
 
 import javax.swing.*;
@@ -45,16 +46,21 @@ public class RetransformTask extends SwingWorker<Void, Integer> {
                 publish((int) ((i / size) * 80d));
                 byte[] originalBytes = original.get(e.getKey());
                 byte[] bytes = BytecodeUtils.getClassNodeBytes(e.getValue());
-                //probably not the best solution but whatever
                 if (!Arrays.equals(bytes, originalBytes)) {
-                    definitions.add(new ClassDefinition(ClassLoader.getSystemClassLoader().loadClass(e.getKey().replace('/', '.')), bytes));
+                    if (!(file instanceof RemoteJarArchive)) {
+                        definitions.add(new ClassDefinition(ClassLoader.getSystemClassLoader().loadClass(e.getKey().replace('/', '.')), bytes));
+                    }
                     newOriginal.put(e.getKey(), bytes);
                 }
                 i++;
             }
-            if (!definitions.isEmpty()) {
+            if (!newOriginal.isEmpty()) {
                 publish(80);
-                ins.redefineClasses(definitions.toArray(new ClassDefinition[0]));
+                if (file instanceof RemoteJarArchive remoteArchive) {
+                    remoteArchive.redefine(newOriginal);
+                } else {
+                    ins.redefineClasses(definitions.toArray(new ClassDefinition[0]));
+                }
                  Main.INSTANCE.getLogger().log("Successfully retransformed " + newOriginal.size() + " classes");
                 original.putAll(newOriginal);
             }

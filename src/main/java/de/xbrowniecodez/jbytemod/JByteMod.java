@@ -27,6 +27,7 @@ import me.grax.jbytemod.ui.tree.SortedTreeNode;
 import me.grax.jbytemod.utils.ErrorDisplay;
 import me.grax.jbytemod.utils.task.LoadTask;
 import me.grax.jbytemod.utils.gui.LookUtils;
+import dev.joyel.attach.RemoteJarArchive;
 import me.grax.jbytemod.utils.task.AttachTask;
 import me.grax.jbytemod.utils.task.RetransformTask;
 import me.grax.jbytemod.utils.task.SaveTask;
@@ -48,6 +49,7 @@ import java.lang.instrument.Instrumentation;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.Locale;
 import java.util.LinkedHashMap;
 
@@ -74,6 +76,7 @@ public class JByteMod extends JFrame {
     private MetricsPanel metricsPanel;
     private LVPList lvpList;
     private MyMenuBar myMenuBar;
+    private MyToolBar toolBar;
     private ClassNode currentNode;
     private MethodNode currentMethod;
     private PluginManager pluginManager;
@@ -111,7 +114,7 @@ public class JByteMod extends JFrame {
         setLvpList(new LVPList());
         createSplitPane(contentPane, agent);
         contentPane.add(pageEndPanel = new PageEndPanel(), BorderLayout.PAGE_END);
-        contentPane.add(new MyToolBar(this), BorderLayout.PAGE_START);
+        contentPane.add(toolBar = new MyToolBar(this), BorderLayout.PAGE_START);
 
         if (jarArchive != null) {
             refreshTree();
@@ -136,6 +139,12 @@ public class JByteMod extends JFrame {
     private void handleWindowClosing(boolean agent) {
         if (JOptionPane.showConfirmDialog(JByteMod.this, languageRes.getResource("exit_warn"), languageRes.getResource("is_sure"),
                 JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            if (jarArchive instanceof RemoteJarArchive remoteArchive) {
+                try {
+                    remoteArchive.close();
+                } catch (Exception ignored) {
+                }
+            }
             if (agent) {
                 dispose();
             } else {
@@ -146,6 +155,10 @@ public class JByteMod extends JFrame {
     }
 
     public void applyChangesAgent() {
+        if (jarArchive instanceof RemoteJarArchive) {
+            new RetransformTask(this, null, jarArchive).execute();
+            return;
+        }
         if (agentInstrumentation == null) {
             throw new RuntimeException();
         }
@@ -245,10 +258,129 @@ public class JByteMod extends JFrame {
     }
 
     public void refreshAgentClasses() {
+        if (jarArchive instanceof RemoteJarArchive remoteArchive) {
+            pageEndPanel.setValue(0);
+            new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    remoteArchive.refresh(progress -> pageEndPanel.setValue(Math.min(progress, 99)));
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                        refreshTree();
+                        pageEndPanel.setValue(100);
+                    } catch (InterruptedException exception) {
+                        Thread.currentThread().interrupt();
+                    } catch (ExecutionException exception) {
+                        Throwable cause = exception.getCause() == null ? exception : exception.getCause();
+                        new ErrorDisplay(cause);
+                    }
+                }
+            }.execute();
+            return;
+        }
         if (agentInstrumentation == null) {
             throw new RuntimeException();
         }
         this.refreshTree();
+    }
+
+    public void connectToAgent(RemoteJarArchive archive) {
+        if (jarArchive instanceof RemoteJarArchive previousArchive && previousArchive != archive) {
+            try {
+                previousArchive.close();
+            } catch (Exception ignored) {
+            }
+        }
+        jarArchive = archive;
+        filePath = null;
+        lastEditFile = "attached process";
+        lastSelectedTreeEntries.clear();
+        installAgentChrome(true);
+        setTitleSuffix("PID " + archive.getProcessId());
+        refreshTree();
+        revalidate();
+        repaint();
+    }
+
+    public void terminateAttachedJvm() {
+        if (!(jarArchive instanceof RemoteJarArchive remoteArchive)) {
+            return;
+        }
+        int choice = JOptionPane.showConfirmDialog(this,
+                "Terminate the connected JVM? This will immediately stop the target application.",
+                "Terminate JVM",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+        if (choice != JOptionPane.YES_OPTION) {
+            return;
+        }
+        runRemoteSessionEnd(remoteArchive, true, "terminated process snapshot", "Target terminated");
+    }
+
+    public void detachAttachedJvm() {
+        if (!(jarArchive instanceof RemoteJarArchive remoteArchive)) {
+            return;
+        }
+        runRemoteSessionEnd(remoteArchive, false, "detached process snapshot", "Detached snapshot");
+    }
+
+    private void runRemoteSessionEnd(RemoteJarArchive remoteArchive, boolean terminate, String editFile, String titleSuffix) {
+        new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                if (terminate) {
+                    remoteArchive.terminate();
+                } else {
+                    remoteArchive.close();
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    completeAttachedJvmSession(remoteArchive, editFile, titleSuffix);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException exception) {
+                    Throwable cause = exception.getCause() == null ? exception : exception.getCause();
+                    new ErrorDisplay(cause);
+                }
+            }
+        }.execute();
+    }
+
+    private void completeAttachedJvmSession(RemoteJarArchive remoteArchive, String editFile, String titleSuffix) {
+        if (jarArchive != remoteArchive) {
+            return;
+        }
+        JarArchive snapshot = new JarArchive(remoteArchive.getClasses(), new HashMap<>());
+        snapshot.setJarManifest(remoteArchive.getJarManifest());
+        jarArchive = snapshot;
+        lastEditFile = editFile;
+        installAgentChrome(false);
+        setTitleSuffix(titleSuffix);
+        notifyPlugins();
+        revalidate();
+        repaint();
+    }
+
+    private void installAgentChrome(boolean agentMode) {
+        setJMenuBar(myMenuBar = new MyMenuBar(this, agentMode));
+        if (pluginManager != null) {
+            myMenuBar.addPluginMenu(pluginManager.getPlugins());
+        }
+        Container contentPane = getContentPane();
+        if (toolBar != null) {
+            contentPane.remove(toolBar);
+        }
+        contentPane.add(toolBar = new MyToolBar(this), BorderLayout.PAGE_START);
     }
 
     public void showWorkspace() {

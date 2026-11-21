@@ -14,6 +14,9 @@ import java.util.Locale;
 @SuppressWarnings("java:S3011")
 public class AttachUtils {
     public static VirtualMachine getVirtualMachine(int pid) {
+        if (pid == ProcessHandle.current().pid()) {
+            throw new IllegalArgumentException("Cannot attach JByteMod to itself");
+        }
         if (VirtualMachine.list().size() > 0) {
             try {
                 return VirtualMachine.attach(String.valueOf(pid));
