@@ -55,8 +55,8 @@ public class ClassTree extends JTree implements IDropUser {
                     jam.selectMethod(node.getClassNode(), node.getMethodNode());
                 } else if (node.getClassNode() != null) {
                     jam.selectClass(node.getClassNode());
-                } else {
-
+                } else if (node.isResource()) {
+                    jam.selectResource(node.getResourcePath());
                 }
             }
         });
@@ -256,6 +256,7 @@ public class ClassTree extends JTree implements IDropUser {
                                             "Remove resource \"" + resPath + "\" from JAR?",
                                             "Confirm Remove", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
                                         jbm.getJarArchive().getOutput().remove(resPath);
+                                        jbm.resourceRemoved(resPath);
                                         model.removeNodeFromParent(stn);
                                     }
                                 }

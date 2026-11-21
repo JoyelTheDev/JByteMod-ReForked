@@ -26,6 +26,7 @@ public class LookUtils {
         FlatLaf.updateUI();
         FlatAnimatedLafChange.hideSnapshotWithAnimation();
         Main.INSTANCE.getJByteMod().getDecompilerPanel().setTheme();
+        Main.INSTANCE.getJByteMod().applyResourceEditorTheme();
     }
 
     private static boolean isDark() {

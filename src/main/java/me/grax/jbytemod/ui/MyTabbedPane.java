@@ -4,6 +4,7 @@ import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import de.xbrowniecodez.jbytemod.ui.lists.SearchList;
 import dev.joyel.pattern.ui.JarWidePatternSearchPanel;
+import dev.joyel.resource.ResourceEditorPanel;
 import dev.joyel.search.GlobalSearchPanel;
 import dev.joyel.ui.metrics.MetricsPanel;
 import dev.joyel.ui.script.ScriptConsolePanel;
@@ -22,10 +23,14 @@ import java.awt.event.MouseEvent;
 public class MyTabbedPane extends JTabbedPane {
     private MyEditorTab editorTab;
     private JarWidePatternSearchPanel patternSearchPanel;
+    private final ResourceEditorPanel resourceEditor;
 
     public MyTabbedPane(JByteMod jbm) {
         this.editorTab = new MyEditorTab(jbm);
         this.addTab("Editor", editorTab);
+        this.resourceEditor = new ResourceEditorPanel(jbm);
+        this.addTab("Resource", resourceEditor);
+        this.setEnabledAt(indexOfComponent(resourceEditor), false);
         SearchList searchList = new SearchList(jbm);
         jbm.setSearchList(searchList);
         JLabel search = new JLabel(Main.INSTANCE.getJByteMod().getLanguageRes().getResource("search_results"));
@@ -82,7 +87,46 @@ public class MyTabbedPane extends JTabbedPane {
     }
 
     public void selectClass(ClassNode cn) {
+        leaveResourceEditor();
         this.editorTab.selectClass(cn);
+    }
+
+    public void selectResource(String path) {
+        if (!resourceEditor.openResource(path)) {
+            return;
+        }
+        int index = indexOfComponent(resourceEditor);
+        String normalized = path.replace('\\', '/');
+        int slash = normalized.lastIndexOf('/');
+        setTitleAt(index, "Resource: " + (slash < 0 ? normalized : normalized.substring(slash + 1)));
+        setEnabledAt(index, true);
+        setSelectedIndex(index);
+    }
+
+    public void clearResourceEditor() {
+        int index = indexOfComponent(resourceEditor);
+        if (getSelectedComponent() == resourceEditor) {
+            setSelectedComponent(editorTab);
+        }
+        resourceEditor.clearResource();
+        setTitleAt(index, "Resource");
+        setEnabledAt(index, false);
+    }
+
+    public void resourceRemoved(String path) {
+        if (path != null && path.equals(resourceEditor.getResourcePath())) {
+            clearResourceEditor();
+        }
+    }
+
+    public void applyResourceEditorTheme() {
+        resourceEditor.applyTheme();
+    }
+
+    private void leaveResourceEditor() {
+        if (getSelectedComponent() == resourceEditor) {
+            setSelectedComponent(editorTab);
+        }
     }
 
     public void openPatternSearch(String prefilledPattern) {
@@ -112,6 +156,7 @@ public class MyTabbedPane extends JTabbedPane {
     }
 
     public void selectMethod(ClassNode cn, MethodNode mn) {
+        leaveResourceEditor();
         this.editorTab.selectMethod(cn, mn);
     }
 

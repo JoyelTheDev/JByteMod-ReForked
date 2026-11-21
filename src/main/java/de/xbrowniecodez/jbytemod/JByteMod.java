@@ -219,6 +219,7 @@ public class JByteMod extends JFrame {
     }
 
     private void onFileLoaded(File input) {
+        clearResourceEditor();
         this.filePath = input;
         setTitleSuffix(input.getName());
         RecentFiles.getInstance().add(input);
@@ -296,6 +297,7 @@ public class JByteMod extends JFrame {
             } catch (Exception ignored) {
             }
         }
+        clearResourceEditor();
         jarArchive = archive;
         filePath = null;
         lastEditFile = "attached process";
@@ -362,6 +364,7 @@ public class JByteMod extends JFrame {
         }
         JarArchive snapshot = new JarArchive(remoteArchive.getClasses(), new HashMap<>());
         snapshot.setJarManifest(remoteArchive.getJarManifest());
+        clearResourceEditor();
         jarArchive = snapshot;
         lastEditFile = editFile;
         installAgentChrome(false);
@@ -381,6 +384,30 @@ public class JByteMod extends JFrame {
             contentPane.remove(toolBar);
         }
         contentPane.add(toolBar = new MyToolBar(this), BorderLayout.PAGE_START);
+    }
+
+    public void selectResource(String path) {
+        if (tabbedPane != null) {
+            tabbedPane.selectResource(path);
+        }
+    }
+
+    public void resourceRemoved(String path) {
+        if (tabbedPane != null) {
+            tabbedPane.resourceRemoved(path);
+        }
+    }
+
+    public void applyResourceEditorTheme() {
+        if (tabbedPane != null) {
+            tabbedPane.applyResourceEditorTheme();
+        }
+    }
+
+    private void clearResourceEditor() {
+        if (tabbedPane != null) {
+            tabbedPane.clearResourceEditor();
+        }
     }
 
     public void showWorkspace() {
