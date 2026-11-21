@@ -70,6 +70,16 @@
 			<version>${procyon.version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>2.0.16</version>
+		</dependency>
+      <dependency>
+      	<groupId>org.slf4j</groupId>
+      	<artifactId>slf4j-nop</artifactId>
+      	<version>2.0.16</version>
+      </dependency>
+		<dependency>
 			<groupId>org.bitbucket.mstrobel</groupId>
 			<artifactId>procyon-reflection</artifactId>
 			<version>${procyon.version}</version>
