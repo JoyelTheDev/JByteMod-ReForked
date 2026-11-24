@@ -28,6 +28,7 @@ import me.grax.jbytemod.utils.ErrorDisplay;
 import me.grax.jbytemod.utils.task.LoadTask;
 import me.grax.jbytemod.utils.gui.LookUtils;
 import dev.joyel.attach.RemoteJarArchive;
+import dev.joyel.ui.WelcomePanel;
 import me.grax.jbytemod.utils.task.AttachTask;
 import me.grax.jbytemod.utils.task.RetransformTask;
 import me.grax.jbytemod.utils.task.SaveTask;
@@ -77,6 +78,9 @@ public class JByteMod extends JFrame {
     private LVPList lvpList;
     private MyMenuBar myMenuBar;
     private MyToolBar toolBar;
+    private CardLayout workspaceLayout;
+    private JPanel workspaceCards;
+    private WelcomePanel welcomePanel;
     private ClassNode currentNode;
     private MethodNode currentMethod;
     private PluginManager pluginManager;
@@ -133,7 +137,13 @@ public class JByteMod extends JFrame {
         b2.setLayout(new GridLayout());
         b2.add(splitPane);
         borderPanel.add(b2);
-        container.add(borderPanel, BorderLayout.CENTER);
+        workspaceLayout = new CardLayout();
+        workspaceCards = new JPanel(workspaceLayout);
+        welcomePanel = new WelcomePanel(this);
+        workspaceCards.add(welcomePanel, "welcome");
+        workspaceCards.add(borderPanel, "workspace");
+        workspaceLayout.show(workspaceCards, jarArchive != null || agent ? "workspace" : "welcome");
+        container.add(workspaceCards, BorderLayout.CENTER);
      }
 
     private void handleWindowClosing(boolean agent) {
@@ -411,6 +421,9 @@ public class JByteMod extends JFrame {
     }
 
     public void showWorkspace() {
+        if (workspaceLayout != null) {
+            workspaceLayout.show(workspaceCards, "workspace");
+        }
         if (tabbedPane != null && tabbedPane.getTabCount() > 0 && tabbedPane.getSelectedIndex() < 0) {
             tabbedPane.setSelectedIndex(0);
         }
