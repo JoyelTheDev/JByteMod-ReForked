@@ -54,12 +54,14 @@ public final class AgentServer {
     static final int COMMAND_CLASS_LOADERS = 7;
     static final int COMMAND_SYSTEM_PROPERTIES = 8;
     static final int COMMAND_AGENT_EXTENSION = 9;
+    static final int COMMAND_CAPTURE = 10;
     static final int RESPONSE_OK = 0;
     static final int RESPONSE_ERROR = 1;
     static final int RESPONSE_PROGRESS = 2;
 
     private static volatile Socket connection;
     private static volatile ServerSocket reusableServer;
+    private static volatile Instrumentation activeInstrumentation;
     private static volatile Properties discoveryProperties;
     private static volatile Map<String, Class<?>> exposedClasses = Map.of();
     private static final Map<String, LoadedAgentExtension> agentExtensions = new ConcurrentHashMap<>();
@@ -73,6 +75,7 @@ public final class AgentServer {
             throw new IllegalArgumentException("Invalid JByteMod agent connection options");
         }
 
+        activeInstrumentation = instrumentation;
         startReusableServer(options[1], instrumentation);
 
         Socket socket = new Socket();
@@ -116,6 +119,10 @@ public final class AgentServer {
             properties.remove(PROTOCOL_PROPERTY);
         }
         agentExtensions.clear();
+        Instrumentation instrumentation = activeInstrumentation;
+        if (instrumentation != null) {
+            AgentCapture.shutdown(instrumentation);
+        }
     }
 
     private static synchronized void startReusableServer(String token, Instrumentation instrumentation)
@@ -243,6 +250,8 @@ public final class AgentServer {
                         sendSystemProperties(output);
                     } else if (command == COMMAND_AGENT_EXTENSION) {
                         invokeAgentExtension(input, output, instrumentation);
+                    } else if (command == COMMAND_CAPTURE) {
+                        AgentCapture.handle(input, output, instrumentation);
                     } else {
                         throw new IllegalArgumentException("Unknown agent command: " + command);
                     }
@@ -616,7 +625,7 @@ public final class AgentServer {
         output.write(bytes);
     }
 
-    private static void writeNullableString(DataOutputStream output, String value) throws Exception {
+    static void writeNullableString(DataOutputStream output, String value) throws Exception {
         output.writeBoolean(value != null);
         if (value != null) writeString(output, value);
     }

@@ -3,6 +3,7 @@ package me.grax.jbytemod.ui;
 import de.xbrowniecodez.jbytemod.Main;
 import de.xbrowniecodez.jbytemod.JByteMod;
 import me.grax.jbytemod.utils.ErrorDisplay;
+import dev.joyel.attach.DynamicDumpDialog;
 import dev.joyel.attach.RemoteJarArchive;
 import me.grax.jbytemod.utils.gui.Icons;
 
@@ -52,6 +53,11 @@ public class MyToolBar extends JToolBar {
                 }));
                 this.add(makeNavigationButton("Terminate connected JVM", getIcon("terminate"), e -> {
                     jbm.terminateAttachedJvm();
+                }));
+                this.add(makeNavigationButton("Dynamic class dump", getIcon("dump"), e -> {
+                    if (jbm.getJarArchive() instanceof RemoteJarArchive archive) {
+                        DynamicDumpDialog.open(jbm, archive);
+                    }
                 }));
             }
         }

@@ -1,6 +1,5 @@
 package dev.joyel.attach;
 
-
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -13,6 +12,7 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -213,6 +213,120 @@ public final class RemoteAgentConnection implements Closeable {
             digest.update(entry.getValue());
         }
         return HexFormat.of().formatHex(digest.digest());
+    }
+
+    public synchronized CaptureStatus captureStart(CaptureOptions options) throws Exception {
+        output.writeByte(AgentServer.COMMAND_CAPTURE);
+        output.writeByte(AgentCapture.OP_START);
+        output.writeBoolean(options.onlyNoCodeSource());
+        output.writeBoolean(options.includeLambdas());
+        output.writeInt(options.maxMegabytes());
+        output.flush();
+        checkResponse();
+        return readCaptureStatus();
+    }
+
+    public synchronized CaptureStatus captureStop() throws Exception {
+        output.writeByte(AgentServer.COMMAND_CAPTURE);
+        output.writeByte(AgentCapture.OP_STOP);
+        output.flush();
+        checkResponse();
+        return readCaptureStatus();
+    }
+
+    public synchronized CaptureStatus captureStatus() throws Exception {
+        output.writeByte(AgentServer.COMMAND_CAPTURE);
+        output.writeByte(AgentCapture.OP_STATUS);
+        output.flush();
+        checkResponse();
+        return readCaptureStatus();
+    }
+
+    public synchronized CaptureStatus captureClear() throws Exception {
+        output.writeByte(AgentServer.COMMAND_CAPTURE);
+        output.writeByte(AgentCapture.OP_CLEAR);
+        output.flush();
+        checkResponse();
+        return readCaptureStatus();
+    }
+
+    public synchronized int captureScan(boolean includeLambdas) throws Exception {
+        output.writeByte(AgentServer.COMMAND_CAPTURE);
+        output.writeByte(AgentCapture.OP_SCAN);
+        output.writeBoolean(includeLambdas);
+        output.flush();
+        checkResponse();
+        return input.readInt();
+    }
+
+    public synchronized CaptureListing captureList(long sinceSequence) throws Exception {
+        output.writeByte(AgentServer.COMMAND_CAPTURE);
+        output.writeByte(AgentCapture.OP_LIST);
+        output.writeLong(sinceSequence);
+        output.flush();
+        checkResponse();
+        long sequence = input.readLong();
+        int count = readCount("captured class", 1_000_000);
+        List<CapturedClassInfo> entries = new ArrayList<>(count);
+        for (int index = 0; index < count; index++) {
+            long id = input.readLong();
+            String name = AgentServer.readString(input);
+            String loaderId = AgentServer.readString(input);
+            String loaderName = AgentServer.readString(input);
+            String loaderType = AgentServer.readString(input);
+            String origin = readNullableString();
+            long time = input.readLong();
+            int size = input.readInt();
+            String source = AgentServer.readString(input);
+            String thread = readNullableString();
+            int frames = readCount("stack frame", 1000);
+            List<String> site = new ArrayList<>(frames);
+            for (int frame = 0; frame < frames; frame++) {
+                site.add(AgentServer.readString(input));
+            }
+            int seen = input.readInt();
+            String sha256 = AgentServer.readString(input);
+            entries.add(new CapturedClassInfo(id, name, loaderId, loaderName, loaderType, origin, time, size,
+                    source, thread, List.copyOf(site), seen, sha256));
+        }
+        return new CaptureListing(sequence, List.copyOf(entries));
+    }
+
+    public synchronized Map<Long, byte[]> captureFetch(Collection<Long> ids) throws Exception {
+        Map<Long, byte[]> result = new LinkedHashMap<>();
+        List<Long> pending = new ArrayList<>(ids);
+        for (int start = 0; start < pending.size(); start += 500) {
+            List<Long> batch = pending.subList(start, Math.min(start + 500, pending.size()));
+            output.writeByte(AgentServer.COMMAND_CAPTURE);
+            output.writeByte(AgentCapture.OP_FETCH);
+            output.writeInt(batch.size());
+            for (long id : batch) {
+                output.writeLong(id);
+            }
+            output.flush();
+            checkResponse();
+            int count = readCount("fetched class", 10_000);
+            for (int index = 0; index < count; index++) {
+                long id = input.readLong();
+                if (input.readBoolean()) {
+                    int length = input.readInt();
+                    if (length < 0 || length > 256 * 1024 * 1024) {
+                        throw new IOException("Invalid captured class size: " + length);
+                    }
+                    byte[] bytes = input.readNBytes(length);
+                    if (bytes.length != length) {
+                        throw new IOException("Target disconnected while fetching captured classes");
+                    }
+                    result.put(id, bytes);
+                }
+            }
+        }
+        return result;
+    }
+
+    private CaptureStatus readCaptureStatus() throws IOException {
+        return new CaptureStatus(input.readBoolean(), input.readInt(), input.readLong(), input.readLong(),
+                input.readLong(), input.readBoolean(), input.readLong(), input.readBoolean(), input.readBoolean());
     }
 
     private int readCount(String type, int maximum) throws IOException {

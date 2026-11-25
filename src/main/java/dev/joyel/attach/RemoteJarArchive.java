@@ -93,6 +93,41 @@ public final class RemoteJarArchive extends JarArchive implements Closeable {
         return connection.invokeAgentExtension(extensionId, entryClassName, classFiles, request);
     }
 
+    public synchronized CaptureStatus captureStart(CaptureOptions options) throws Exception {
+        requireRunning();
+        return connection.captureStart(options);
+    }
+
+    public synchronized CaptureStatus captureStop() throws Exception {
+        requireRunning();
+        return connection.captureStop();
+    }
+
+    public synchronized CaptureStatus captureStatus() throws Exception {
+        requireRunning();
+        return connection.captureStatus();
+    }
+
+    public synchronized CaptureStatus captureClear() throws Exception {
+        requireRunning();
+        return connection.captureClear();
+    }
+
+    public synchronized int captureScan(boolean includeLambdas) throws Exception {
+        requireRunning();
+        return connection.captureScan(includeLambdas);
+    }
+
+    public synchronized CaptureListing captureList(long sinceSequence) throws Exception {
+        requireRunning();
+        return connection.captureList(sinceSequence);
+    }
+
+    public synchronized Map<Long, byte[]> captureFetch(java.util.Collection<Long> ids) throws Exception {
+        requireRunning();
+        return connection.captureFetch(ids);
+    }
+
     public boolean isFrozen() {
         return frozen;
     }

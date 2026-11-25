@@ -21,6 +21,7 @@ public final class AgentJarBuilder {
             addManifest(output, entries);
             addClass(AgentBootstrap.class, output, entries);
             addClass(AgentServer.class, output, entries);
+            addClass(AgentCapture.class, output, entries);
         }
     }
 
