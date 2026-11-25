@@ -5,10 +5,15 @@ import de.xbrowniecodez.jbytemod.JByteMod;
 import me.grax.jbytemod.utils.ErrorDisplay;
 import dev.joyel.attach.DynamicDumpDialog;
 import dev.joyel.attach.RemoteJarArchive;
+import dev.joyel.nbridge.NativeBridgeDialog;
+import dev.joyel.nbridge.NativeHost;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 import me.grax.jbytemod.utils.gui.Icons;
 
 import javax.swing.*;
 import java.awt.event.ActionListener;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 public class MyToolBar extends JToolBar {
@@ -68,6 +73,26 @@ public class MyToolBar extends JToolBar {
         this.addSeparator();
         this.add(makeNavigationButton("Access Helper", getIcon("table"), e -> {
             new JAccessHelper().setVisible(true);
+        }));
+        this.add(makeNavigationButton("Native bridge", getIcon("native"), e -> {
+            NativeBridgeDialog.open(jbm, new NativeHost() {
+                @Override
+                public Map<String, ClassNode> classes() {
+                    return jbm.getJarArchive() == null || jbm.getJarArchive().getClasses() == null
+                            ? Map.of() : jbm.getJarArchive().getClasses();
+                }
+
+                @Override
+                public Map<String, byte[]> resources() {
+                    return jbm.getJarArchive() == null || jbm.getJarArchive().getOutput() == null
+                            ? Map.of() : jbm.getJarArchive().getOutput();
+                }
+
+                @Override
+                public void goTo(ClassNode classNode, MethodNode methodNode) {
+                    jbm.selectMethod(classNode, methodNode);
+                }
+            });
         }));
         this.add(makeNavigationButton("Attach to other process", getIcon("plug"), e -> {
             menubar.openProcessSelection();
