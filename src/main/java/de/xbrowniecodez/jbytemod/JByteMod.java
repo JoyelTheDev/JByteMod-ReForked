@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import de.xbrowniecodez.jbytemod.plugin.Plugin;
 import de.xbrowniecodez.jbytemod.plugin.PluginManager;
+import dev.joyel.plugins.PluginManagerDialog;
 import dev.joyel.hierarchy.HierarchyManager;
 import me.grax.jbytemod.xref.XrefManager;
 import me.grax.jbytemod.xref.XrefMap;
@@ -256,6 +257,36 @@ public class JByteMod extends JFrame {
 
     private void displayJarWarning() {
         new ErrorDisplay(new UnsupportedOperationException(languageRes.getResource("jar_warn")));
+    }
+
+    private void onPluginsChanged(java.util.List<Plugin> started) {
+        Runnable update = () -> {
+            if (myMenuBar != null && pluginManager != null) {
+                myMenuBar.addPluginMenu(pluginManager.getPlugins());
+            }
+            if (jarArchive != null) {
+                for (Plugin plugin : started) {
+                    try {
+                        plugin.loadFile(jarArchive.getClasses());
+                    } catch (Throwable failure) {
+                        Main.INSTANCE.getLogger().err("Plugin failed while handling the loaded file: " + failure);
+                    }
+                }
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            update.run();
+        } else {
+            SwingUtilities.invokeLater(update);
+        }
+    }
+
+    public void openPluginManager(boolean browse) {
+        if (pluginManager == null) {
+            return;
+        }
+        PluginManagerDialog.open(this, pluginManager.getHost(), pluginManager.getRepository(),
+                () -> version.toString(), browse);
     }
 
     private void notifyPlugins() {
@@ -540,6 +571,7 @@ public class JByteMod extends JFrame {
         this.initializeFrame(false);
         this.setPluginManager(new PluginManager(this));
         this.myMenuBar.addPluginMenu(pluginManager.getPlugins());
+        pluginManager.getHost().setListener(this::onPluginsChanged);
         restoreSavedTheme();
         super.setVisible(b);
         TutorialDialog.openIfFirstTime(this);

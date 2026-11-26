@@ -943,19 +943,33 @@ public class MyMenuBar extends JMenuBar {
         }
     }
 
+    private JMenu pluginMenu;
+
     public void addPluginMenu(ArrayList<Plugin> plugins) {
-        if (!plugins.isEmpty()) {
-            JMenu pluginMenu = new JMenu("Plugins");
-            for (final Plugin p : plugins) {
-                JMenuItem jmi = new JMenuItem(p.getName() + " " + p.getVersion());
-                jmi.setEnabled(p.isClickable());
-                jmi.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) { p.menuClick(); }
-                });
-                pluginMenu.add(jmi);
-            }
-            this.add(pluginMenu);
+        if (pluginMenu != null) {
+            this.remove(pluginMenu);
         }
+        pluginMenu = new JMenu("Plugins");
+        for (final Plugin p : plugins) {
+            JMenuItem jmi = new JMenuItem(p.getName() + " " + p.getVersion());
+            jmi.setEnabled(p.isClickable());
+            jmi.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) { p.menuClick(); }
+            });
+            pluginMenu.add(jmi);
+        }
+        if (!plugins.isEmpty()) {
+            pluginMenu.addSeparator();
+        }
+        JMenuItem manage = new JMenuItem("Manage plugins...");
+        manage.addActionListener(e -> jbm.openPluginManager(false));
+        pluginMenu.add(manage);
+        JMenuItem browse = new JMenuItem("Browse plugins...");
+        browse.addActionListener(e -> jbm.openPluginManager(true));
+        pluginMenu.add(browse);
+        this.add(pluginMenu);
+        this.revalidate();
+        this.repaint();
     }
 
     public boolean isAgent() { 
