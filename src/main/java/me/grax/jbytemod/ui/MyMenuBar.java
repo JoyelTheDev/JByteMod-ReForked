@@ -944,12 +944,26 @@ public class MyMenuBar extends JMenuBar {
     }
 
     private JMenu pluginMenu;
+    private ArrayList<Plugin> lastPlugins = new ArrayList<>();
+    private int pluginUpdates;
+
+    public void setPluginUpdateCount(int count) {
+        pluginUpdates = count;
+        addPluginMenu(lastPlugins);
+    }
 
     public void addPluginMenu(ArrayList<Plugin> plugins) {
+        lastPlugins = plugins;
         if (pluginMenu != null) {
             this.remove(pluginMenu);
         }
-        pluginMenu = new JMenu("Plugins");
+        pluginMenu = new JMenu(pluginUpdates > 0 ? "Plugins (" + pluginUpdates + ")" : "Plugins");
+        if (pluginUpdates > 0) {
+            JMenuItem updates = new JMenuItem(pluginUpdates + " plugin update" + (pluginUpdates == 1 ? "" : "s") + " available...");
+            updates.addActionListener(e -> jbm.openPluginManager(true));
+            pluginMenu.add(updates);
+            pluginMenu.addSeparator();
+        }
         for (final Plugin p : plugins) {
             JMenuItem jmi = new JMenuItem(p.getName() + " " + p.getVersion());
             jmi.setEnabled(p.isClickable());

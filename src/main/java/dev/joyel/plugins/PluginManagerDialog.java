@@ -8,10 +8,10 @@ import java.util.function.Supplier;
 public final class PluginManagerDialog extends JDialog {
     private static PluginManagerDialog current;
 
-    private PluginManagerDialog(Frame owner, PluginHost host, PluginRepositoryService repository,
+    private PluginManagerDialog(Frame owner, PluginHost host, PluginRepositoryService repository, PluginSettings settings,
                                 Supplier<String> applicationVersion, boolean browse) {
         super(owner, "Plugin manager", false);
-        PluginManagerPanel panel = new PluginManagerPanel(host, repository, applicationVersion);
+        PluginManagerPanel panel = new PluginManagerPanel(host, repository, settings, applicationVersion);
         if (browse) {
             panel.selectBrowseTab();
         }
@@ -23,13 +23,13 @@ public final class PluginManagerDialog extends JDialog {
     }
 
     public static synchronized void open(Frame owner, PluginHost host, PluginRepositoryService repository,
-                                         Supplier<String> applicationVersion, boolean browse) {
+                                         PluginSettings settings, Supplier<String> applicationVersion, boolean browse) {
         if (current != null && current.isDisplayable()) {
             current.toFront();
             current.requestFocus();
             return;
         }
-        current = new PluginManagerDialog(owner, host, repository, applicationVersion, browse);
+        current = new PluginManagerDialog(owner, host, repository, settings, applicationVersion, browse);
         current.setVisible(true);
     }
 }

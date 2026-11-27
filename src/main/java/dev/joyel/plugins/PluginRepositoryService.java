@@ -41,7 +41,16 @@ public final class PluginRepositoryService {
 
     public record RepositoryPlugin(String id, String name, String version, String author, String description,
                                    String minimumJByteModVersion, String website, String downloadUrl, String sha256,
-                                   String fileName, String repositoryName, String repositoryUrl) {
+                                   String fileName, String repositoryName, String repositoryUrl,
+                                   String publisherKey, String signature) {
+        public boolean signed() {
+            return publisherKey != null && !publisherKey.isBlank() && signature != null && !signature.isBlank();
+        }
+
+        public String publisherFingerprint() {
+            return signed() ? PluginSignatures.fingerprint(publisherKey) : null;
+        }
+
         public boolean downloadable() {
             return downloadUrl != null && !downloadUrl.isBlank() && sha256 != null && sha256.matches("(?i)[0-9a-f]{64}");
         }
@@ -60,7 +69,10 @@ public final class PluginRepositoryService {
 
     private record RegistryPlugin(String id, String name, String version, String author, String description,
                                   String minimumJByteModVersion, String website, String downloadUrl, String sha256,
-                                  String fileName) {
+                                  String fileName, String publisherKey, String signature) {
+    }
+
+    public record DownloadResult(Path file, SignatureStatus status, String fingerprint) {
     }
 
     private record LoadedRegistry(RegistryDocument document, boolean cached) {
@@ -158,6 +170,10 @@ public final class PluginRepositoryService {
     }
 
     public Path downloadPlugin(RepositoryPlugin plugin, IntConsumer progress) throws IOException, InterruptedException {
+        return download(plugin, progress).file();
+    }
+
+    public DownloadResult download(RepositoryPlugin plugin, IntConsumer progress) throws IOException, InterruptedException {
         if (!plugin.downloadable()) {
             throw new IOException("This plugin does not provide a verified download");
         }
@@ -211,7 +227,14 @@ public final class PluginRepositoryService {
                 throw new IOException("The download is not a JAR file");
             }
             progress.accept(100);
-            return temporary;
+            SignatureStatus status = SignatureStatus.UNSIGNED;
+            String fingerprint = null;
+            if (plugin.signed()) {
+                fingerprint = plugin.publisherFingerprint();
+                status = PluginSignatures.verify(plugin.publisherKey(), plugin.signature(), plugin.id(), plugin.version(), actual)
+                        ? SignatureStatus.VALID : SignatureStatus.INVALID;
+            }
+            return new DownloadResult(temporary, status, fingerprint);
         } catch (IOException | InterruptedException | RuntimeException failure) {
             Files.deleteIfExists(temporary);
             throw failure;
@@ -313,9 +336,18 @@ public final class PluginRepositoryService {
                 throw new IllegalArgumentException(id + ": " + invalid.getMessage());
             }
         }
+        String publisherKey = blank(plugin.publisherKey());
+        String signature = blank(plugin.signature());
+        if (publisherKey.isEmpty() != signature.isEmpty()) {
+            throw new IllegalArgumentException(id + ": publisherKey and signature must be given together");
+        }
+        if (!publisherKey.isEmpty() && !PluginSignatures.isWellFormedKey(publisherKey)) {
+            throw new IllegalArgumentException(id + ": invalid publisherKey");
+        }
         return new RepositoryPlugin(id, name, version, author, clip(blank(plugin.description()), 2000),
                 blank(plugin.minimumJByteModVersion()), website, downloadUrl,
-                blank(plugin.sha256()).toLowerCase(Locale.ROOT), clip(blank(plugin.fileName()), 120), repositoryName, repositoryUrl);
+                blank(plugin.sha256()).toLowerCase(Locale.ROOT), clip(blank(plugin.fileName()), 120), repositoryName, repositoryUrl,
+                publisherKey, signature);
     }
 
     private List<URI> registryCandidates(String source) {

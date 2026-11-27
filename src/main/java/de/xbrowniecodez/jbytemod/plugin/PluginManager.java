@@ -7,6 +7,9 @@ import de.xbrowniecodez.jbytemod.utils.Utils;
 import dev.joyel.plugins.PluginHost;
 import dev.joyel.plugins.PluginRepositoryService;
 import dev.joyel.plugins.PluginSettings;
+import dev.joyel.ui.ToastManager;
+
+import javax.swing.SwingUtilities;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,11 +18,14 @@ import java.util.List;
 public class PluginManager implements AutoCloseable {
     private final PluginHost host;
     private final PluginRepositoryService repository;
+    private final PluginSettings settings;
 
     public PluginManager(JByteMod jbm) {
-        PluginSettings settings = PluginSettings.system();
+        settings = PluginSettings.system();
         Path workingDirectory = Path.of(String.valueOf(Utils.getWorkingDirectory()));
-        host = new PluginHost(workingDirectory.resolve("plugins"), settings, message -> Main.INSTANCE.getLogger().log(message));
+        host = new PluginHost(workingDirectory.resolve("plugins"), workingDirectory.resolve("plugin-data"), settings,
+                () -> jbm.getVersion().toString(), message -> Main.INSTANCE.getLogger().log(message),
+                message -> SwingUtilities.invokeLater(() -> ToastManager.info(message)));
         host.registerBuiltin("diff", DiffPlugin::new);
         host.loadAll();
         Path repositoryFolder = workingDirectory.resolve("plugin-repository");
@@ -49,6 +55,10 @@ public class PluginManager implements AutoCloseable {
 
     public PluginRepositoryService getRepository() {
         return repository;
+    }
+
+    public PluginSettings getSettings() {
+        return settings;
     }
 
     @Override

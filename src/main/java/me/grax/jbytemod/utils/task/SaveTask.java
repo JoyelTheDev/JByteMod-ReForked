@@ -75,6 +75,7 @@ public class SaveTask extends SwingWorker<Void, Integer> {
                 Main.INSTANCE.getLogger().log("Saving..");
                 saveAsJarNew(outputBytes, output.toPath());
                 Main.INSTANCE.getLogger().successNotification("Saved " + this.output.getName());
+                Main.INSTANCE.getJByteMod().firePluginFileSaved(this.output);
             } catch (Exception e) {
                 Main.INSTANCE.getLogger().errNotification("Saving failed: " + e.getMessage());
             }
@@ -97,6 +98,7 @@ public class SaveTask extends SwingWorker<Void, Integer> {
         Files.write(toClassPath(output), bytes);
         publish(100);
         Main.INSTANCE.getLogger().successNotification("Saved " + toClassPath(output).getFileName());
+        Main.INSTANCE.getJByteMod().firePluginFileSaved(toClassPath(output).toFile());
     }
 
     static Path toClassPath(File target) {

@@ -13,9 +13,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +36,7 @@ public final class PluginHost implements AutoCloseable {
     public static final String ATTRIBUTE_DESCRIPTION = "JByteMod-Plugin-Description";
     private static final long MAX_JAR_SIZE = 100L * 1024 * 1024;
     private static final int MAX_ENTRIES = 200_000;
+    private static final long SLOW_MILLIS = 250;
 
     public interface Listener {
         void pluginsChanged(List<Plugin> newlyActivated);
@@ -46,15 +49,26 @@ public final class PluginHost implements AutoCloseable {
     }
 
     private final Path folder;
+    private final Path dataRoot;
     private final PluginSettings settings;
+    private final Supplier<String> applicationVersion;
     private final Consumer<String> logger;
+    private final Consumer<String> toaster;
     private final List<PluginRecord> records = new ArrayList<>();
     private Listener listener;
 
     public PluginHost(Path folder, PluginSettings settings, Consumer<String> logger) {
+        this(folder, folder.resolveSibling("plugin-data"), settings, () -> "", logger, null);
+    }
+
+    public PluginHost(Path folder, Path dataRoot, PluginSettings settings, Supplier<String> applicationVersion,
+                      Consumer<String> logger, Consumer<String> toaster) {
         this.folder = folder;
+        this.dataRoot = dataRoot;
         this.settings = settings;
+        this.applicationVersion = applicationVersion;
         this.logger = logger;
+        this.toaster = toaster;
     }
 
     public Path folder() {
@@ -85,6 +99,7 @@ public final class PluginHost implements AutoCloseable {
             if (record.enabled) {
                 started.addAll(startJar(record));
             } else {
+                readIdentity(record);
                 fillFromCache(record, record.key);
             }
         }
@@ -107,6 +122,7 @@ public final class PluginHost implements AutoCloseable {
             if (record.enabled) {
                 started.addAll(startJar(record));
             } else {
+                readIdentity(record);
                 fillFromCache(record, record.key);
             }
         }
@@ -141,6 +157,9 @@ public final class PluginHost implements AutoCloseable {
         } else {
             stop(record);
             record.error = null;
+            if (!record.builtin) {
+                readIdentity(record);
+            }
             fillFromCache(record, settingsKey);
         }
         notifyListener(started);
@@ -225,6 +244,7 @@ public final class PluginHost implements AutoCloseable {
                 throw new IOException("The plugin failed to load: " + reason);
             }
         } else {
+            readIdentity(record);
             fillFromCache(record, record.key);
         }
         if (backup != null) {
@@ -243,6 +263,7 @@ public final class PluginHost implements AutoCloseable {
         Files.deleteIfExists(record.file);
         Files.deleteIfExists(record.file.resolveSibling(record.file.getFileName() + ".backup"));
         settings.forget(record.key);
+        settings.forgetPublisher(record.pluginId());
         records.remove(record);
         log("Removed plugin " + record.key);
         notifyListener(List.of());
@@ -254,6 +275,74 @@ public final class PluginHost implements AutoCloseable {
             stop(record);
         }
         records.clear();
+    }
+
+    public void dispatch(String event, Consumer<Plugin> action) {
+        dispatchTo(null, event, action);
+    }
+
+    public void dispatchTo(Collection<Plugin> targets, String event, Consumer<Plugin> action) {
+        List<Object[]> work = new ArrayList<>();
+        synchronized (this) {
+            Set<Plugin> wanted = null;
+            if (targets != null) {
+                wanted = Collections.newSetFromMap(new IdentityHashMap<>());
+                wanted.addAll(targets);
+            }
+            for (PluginRecord record : records) {
+                if (!record.enabled || record.error != null) {
+                    continue;
+                }
+                for (Plugin plugin : record.plugins) {
+                    if (wanted == null || wanted.contains(plugin)) {
+                        work.add(new Object[]{record, plugin});
+                    }
+                }
+            }
+        }
+        for (Object[] item : work) {
+            PluginRecord record = (PluginRecord) item[0];
+            Plugin plugin = (Plugin) item[1];
+            long started = System.nanoTime();
+            try {
+                action.accept(plugin);
+            } catch (Throwable failure) {
+                recordFault(record, event, failure);
+            }
+            long elapsed = (System.nanoTime() - started) / 1_000_000;
+            if (elapsed > SLOW_MILLIS) {
+                recordSlow(record, event, elapsed);
+            }
+        }
+    }
+
+    private void recordFault(PluginRecord record, String event, Throwable failure) {
+        boolean report;
+        int count;
+        synchronized (this) {
+            record.faults++;
+            record.lastFault = event + ": " + describe(failure);
+            count = record.faults;
+            report = count <= 5 || count % 100 == 0;
+        }
+        if (report) {
+            log("Plugin " + record.name + " failed in " + event + " (error " + count + "): " + describe(failure));
+        }
+    }
+
+    private void recordSlow(PluginRecord record, String event, long millis) {
+        boolean report;
+        synchronized (this) {
+            record.slowCalls++;
+            report = record.slowCalls <= 3;
+        }
+        if (report) {
+            log("Plugin " + record.name + " took " + millis + " ms in " + event + " and blocks the interface while it runs");
+        }
+    }
+
+    private PluginContext contextFor(PluginRecord record) {
+        return new HostPluginContext(record.pluginId(), dataRoot, settings, applicationVersion, logger, toaster);
     }
 
     private PluginRecord findInstalled(String pluginId, InspectResult info) {
@@ -280,6 +369,7 @@ public final class PluginHost implements AutoCloseable {
         List<Plugin> started = new ArrayList<>();
         try {
             Plugin plugin = record.factory.get();
+            plugin.attachContext(contextFor(record));
             plugin.init();
             started.add(plugin);
             record.plugins.clear();
@@ -323,6 +413,7 @@ public final class PluginHost implements AutoCloseable {
                     continue;
                 }
                 Plugin instance = (Plugin) type.getDeclaredConstructor().newInstance();
+                instance.attachContext(contextFor(record));
                 instance.init();
                 started.add(instance);
             }
@@ -357,6 +448,18 @@ public final class PluginHost implements AutoCloseable {
         record.version = first.getVersion() == null ? "" : first.getVersion();
         record.author = first.getAuthor() == null ? "" : first.getAuthor();
         store.cacheInfo(settingsKey, record.name, record.version, record.author, record.description);
+    }
+
+    private void readIdentity(PluginRecord record) {
+        try {
+            JarMeta meta = readMeta(record.file);
+            record.manifestId = meta.manifestId();
+            record.classNames = meta.classNames();
+            if (record.description.isEmpty() && meta.description() != null) {
+                record.description = meta.description();
+            }
+        } catch (IOException ignored) {
+        }
     }
 
     private void fillFromCache(PluginRecord record, String settingsKey) {

@@ -11,6 +11,8 @@ import lombok.Setter;
 import de.xbrowniecodez.jbytemod.plugin.Plugin;
 import de.xbrowniecodez.jbytemod.plugin.PluginManager;
 import dev.joyel.plugins.PluginManagerDialog;
+import dev.joyel.plugins.PluginRepositoryService;
+import dev.joyel.plugins.PluginUpdateChecker;
 import dev.joyel.hierarchy.HierarchyManager;
 import me.grax.jbytemod.xref.XrefManager;
 import me.grax.jbytemod.xref.XrefMap;
@@ -29,6 +31,7 @@ import me.grax.jbytemod.utils.ErrorDisplay;
 import me.grax.jbytemod.utils.task.LoadTask;
 import me.grax.jbytemod.utils.gui.LookUtils;
 import dev.joyel.attach.RemoteJarArchive;
+import dev.joyel.ui.ToastManager;
 import dev.joyel.ui.WelcomePanel;
 import me.grax.jbytemod.utils.task.AttachTask;
 import me.grax.jbytemod.utils.task.RetransformTask;
@@ -264,15 +267,10 @@ public class JByteMod extends JFrame {
             if (myMenuBar != null && pluginManager != null) {
                 myMenuBar.addPluginMenu(pluginManager.getPlugins());
             }
-            if (jarArchive != null) {
-                for (Plugin plugin : started) {
-                    try {
-                        plugin.loadFile(jarArchive.getClasses());
-                    } catch (Throwable failure) {
-                        Main.INSTANCE.getLogger().err("Plugin failed while handling the loaded file: " + failure);
-                    }
-                }
+            if (jarArchive != null && !started.isEmpty()) {
+                pluginManager.getHost().dispatchTo(started, "loadFile", plugin -> plugin.loadFile(jarArchive.getClasses()));
             }
+            applyPluginUpdates(false);
         };
         if (SwingUtilities.isEventDispatchThread()) {
             update.run();
@@ -286,16 +284,67 @@ public class JByteMod extends JFrame {
             return;
         }
         PluginManagerDialog.open(this, pluginManager.getHost(), pluginManager.getRepository(),
-                () -> version.toString(), browse);
+                pluginManager.getSettings(), () -> version.toString(), browse);
+    }
+
+    private PluginRepositoryService.Catalog pluginCatalog;
+
+    private void startPluginUpdateCheck() {
+        if (pluginManager == null || !pluginManager.getSettings().updateChecksEnabled()) {
+            return;
+        }
+        Thread worker = new Thread(() -> {
+            try {
+                PluginRepositoryService.Catalog catalog = pluginManager.getRepository().loadCatalog();
+                SwingUtilities.invokeLater(() -> {
+                    pluginCatalog = catalog;
+                    applyPluginUpdates(true);
+                });
+            } catch (Throwable failure) {
+                Main.INSTANCE.getLogger().log("Plugin update check failed: " + failure.getMessage());
+            }
+        }, "plugin-update-check");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void applyPluginUpdates(boolean announce) {
+        if (pluginCatalog == null || pluginManager == null || myMenuBar == null) {
+            return;
+        }
+        java.util.List<PluginUpdateChecker.Update> updates =
+                PluginUpdateChecker.findUpdates(pluginManager.getHost(), pluginCatalog, version.toString());
+        myMenuBar.setPluginUpdateCount(updates.size());
+        if (!announce) {
+            return;
+        }
+        java.util.List<PluginUpdateChecker.Update> fresh = new java.util.ArrayList<>();
+        for (PluginUpdateChecker.Update update : updates) {
+            if (!pluginManager.getSettings().wasNotified(update.marker())) {
+                fresh.add(update);
+                pluginManager.getSettings().markNotified(update.marker());
+            }
+        }
+        if (fresh.size() == 1) {
+            ToastManager.info("Plugin update available: " + fresh.get(0).describe());
+        } else if (fresh.size() > 1) {
+            ToastManager.info(fresh.size() + " plugin updates available. Open Plugins > Manage plugins.");
+        }
+    }
+
+    private void firePlugins(String event, java.util.function.Consumer<Plugin> action) {
+        if (pluginManager != null) {
+            pluginManager.getHost().dispatch(event, action);
+        }
+    }
+
+    public void firePluginFileSaved(java.io.File file) {
+        SwingUtilities.invokeLater(() -> firePlugins("fileSaved", plugin -> plugin.fileSaved(file)));
     }
 
     private void notifyPlugins() {
-        for (Plugin p : pluginManager.getPlugins()) {
-            try {
-                p.loadFile(jarArchive.getClasses());
-            } catch (Throwable t) {
-                Main.INSTANCE.getLogger().err("Plugin failed while handling the loaded file: " + t);
-            }
+        if (pluginManager != null && jarArchive != null) {
+            pluginManager.getHost().dispatch("loadFile", plugin -> plugin.loadFile(jarArchive.getClasses()));
         }
     }
 
@@ -491,6 +540,7 @@ public class JByteMod extends JFrame {
         infoPanel.selectClass(cn);
         codeList.loadFields(cn);
         tabbedPane.selectClass(cn);
+        firePlugins("classSelected", plugin -> plugin.classSelected(cn));
         if (metricsPanel != null) metricsPanel.showClassMetrics(cn);
         lastSelectedTreeEntries.put(cn, null);
         if (lastSelectedTreeEntries.size() > 5) {
@@ -531,6 +581,7 @@ public class JByteMod extends JFrame {
         this.currentNode = cn;
         this.currentMethod = mn;
         if (pageEndPanel != null) pageEndPanel.setSelection(cn, mn);
+        firePlugins("methodSelected", plugin -> plugin.methodSelected(cn, mn));
         infoPanel.selectMethod(cn, mn);
         if (!codeList.loadInstructions(mn)) {
             codeList.setSelectedIndex(-1);
@@ -572,6 +623,7 @@ public class JByteMod extends JFrame {
         this.setPluginManager(new PluginManager(this));
         this.myMenuBar.addPluginMenu(pluginManager.getPlugins());
         pluginManager.getHost().setListener(this::onPluginsChanged);
+        startPluginUpdateCheck();
         restoreSavedTheme();
         super.setVisible(b);
         TutorialDialog.openIfFirstTime(this);

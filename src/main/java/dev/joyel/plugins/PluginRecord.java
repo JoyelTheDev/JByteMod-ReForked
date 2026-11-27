@@ -40,6 +40,9 @@ public final class PluginRecord {
     String version = "";
     String author = "";
     String description = "";
+    int faults;
+    int slowCalls;
+    String lastFault;
 
     PluginRecord(String key, boolean builtin, Path file, Supplier<Plugin> factory) {
         this.key = key;
@@ -98,6 +101,32 @@ public final class PluginRecord {
             return State.FAILED;
         }
         return enabled && !plugins.isEmpty() ? State.ACTIVE : State.DISABLED;
+    }
+
+    public String pluginId() {
+        if (builtin) {
+            return "builtin." + key;
+        }
+        if (manifestId != null) {
+            return manifestId;
+        }
+        String base = key;
+        if (base.toLowerCase(Locale.ROOT).endsWith(".jar")) {
+            base = base.substring(0, base.length() - 4);
+        }
+        return base;
+    }
+
+    public int faults() {
+        return faults;
+    }
+
+    public int slowCalls() {
+        return slowCalls;
+    }
+
+    public String lastFault() {
+        return lastFault;
     }
 
     public boolean matches(String id) {

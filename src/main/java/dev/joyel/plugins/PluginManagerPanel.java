@@ -1,6 +1,7 @@
 package dev.joyel.plugins;
 
 import javax.swing.BorderFactory;
+import javax.swing.JCheckBox;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -43,6 +44,7 @@ import java.util.function.Supplier;
 public final class PluginManagerPanel extends JPanel {
     private final PluginHost host;
     private final PluginRepositoryService repository;
+    private final PluginSettings settings;
     private final Supplier<String> applicationVersion;
     private final InstalledModel installedModel = new InstalledModel();
     private final BrowseModel browseModel = new BrowseModel();
@@ -62,14 +64,17 @@ public final class PluginManagerPanel extends JPanel {
     private final JButton websiteButton = new JButton("Open website");
     private final JProgressBar progress = new JProgressBar(0, 100);
     private final JLabel statusLabel = new JLabel(" ");
+    private final JCheckBox updateChecksBox = new JCheckBox("Check for plugin updates at startup");
     private final JTabbedPane tabs = new JTabbedPane();
     private List<String> catalogMessages = List.of();
     private boolean busy;
     private boolean catalogLoaded;
 
-    public PluginManagerPanel(PluginHost host, PluginRepositoryService repository, Supplier<String> applicationVersion) {
+    public PluginManagerPanel(PluginHost host, PluginRepositoryService repository, PluginSettings settings,
+                              Supplier<String> applicationVersion) {
         this.host = host;
         this.repository = repository;
+        this.settings = settings;
         this.applicationVersion = applicationVersion;
         setLayout(new BorderLayout(0, 6));
         setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
@@ -99,6 +104,9 @@ public final class PluginManagerPanel extends JPanel {
         installedActions.add(removeButton);
         installedActions.add(folderButton);
         installedActions.add(reloadButton);
+        updateChecksBox.setSelected(settings.updateChecksEnabled());
+        updateChecksBox.addActionListener(event -> settings.setUpdateChecksEnabled(updateChecksBox.isSelected()));
+        installedActions.add(updateChecksBox);
         JPanel installedPage = new JPanel(new BorderLayout(0, 6));
         JSplitPane installedSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(installedTable), new JScrollPane(installedDetail));
         installedSplit.setResizeWeight(0.65);
@@ -253,6 +261,18 @@ public final class PluginManagerPanel extends JPanel {
         }
         text.append("Source:  ").append(record.isBuiltin() ? "Built in" : record.file().toString()).append('\n');
         text.append("Status:  ").append(record.state().label()).append('\n');
+        String publisher = settings.publisher(record.pluginId());
+        if (publisher != null) {
+            text.append("Publisher: ").append(publisher).append(settings.isTrustedKey(publisher) ? " (trusted)" : "").append('\n');
+        } else if (!record.isBuiltin()) {
+            text.append("Publisher: not signed\n");
+        }
+        if (record.faults() > 0) {
+            text.append("Runtime errors: ").append(record.faults()).append(" (last: ").append(record.lastFault()).append(")\n");
+        }
+        if (record.slowCalls() > 0) {
+            text.append("Slow handlers: ").append(record.slowCalls()).append(" call(s) took over 250 ms and blocked the interface\n");
+        }
         if (!record.description().isEmpty()) {
             text.append('\n').append(record.description()).append('\n');
         }
@@ -293,6 +313,7 @@ public final class PluginManagerPanel extends JPanel {
         if (!entry.website().isEmpty()) {
             text.append("Website:     ").append(entry.website()).append('\n');
         }
+        text.append("Signature:   ").append(signatureLine(entry)).append('\n');
         if (entry.downloadable()) {
             text.append("Download:    ").append(entry.downloadUrl()).append('\n')
                     .append("SHA-256:     ").append(entry.sha256()).append('\n');
@@ -302,6 +323,24 @@ public final class PluginManagerPanel extends JPanel {
         }
         browseDetail.setText(text.toString());
         browseDetail.setCaretPosition(0);
+    }
+
+    private String pinKey(PluginRepositoryService.RepositoryPlugin entry) {
+        PluginRecord installed = installedFor(entry);
+        return installed != null ? installed.pluginId() : entry.id();
+    }
+
+    private String signatureLine(PluginRepositoryService.RepositoryPlugin entry) {
+        SignatureStatus claimed = entry.signed() ? SignatureStatus.VALID : SignatureStatus.UNSIGNED;
+        PluginTrust.Outcome outcome = PluginTrust.evaluate(settings, pinKey(entry), claimed, entry.publisherFingerprint());
+        return switch (outcome.decision()) {
+            case ALLOW_TRUSTED -> "signed by trusted publisher " + entry.publisherFingerprint();
+            case PROMPT_NEW_PUBLISHER -> "signed by publisher " + entry.publisherFingerprint() + " (new - you will be asked to trust it)";
+            case BLOCK_PUBLISHER_CHANGED -> "signed by " + entry.publisherFingerprint() + ", which differs from the installed version - install is blocked";
+            case BLOCK_UNSIGNED_UPDATE -> "not signed, but the installed version is - install is blocked";
+            case ALLOW_UNSIGNED -> "not signed";
+            default -> "invalid";
+        };
     }
 
     private void updateButtons() {
@@ -384,6 +423,8 @@ public final class PluginManagerPanel extends JPanel {
                 action + " " + entry.name() + " " + entry.version() + " from " + entry.repositoryName() + "?\n\n"
                         + "Plugins run with the same access as JByteMod itself, including your files and network.\n"
                         + "Only continue if you trust the author and the repository.\n\n"
+                        + (entry.signed() ? "Publisher signature: " + entry.publisherFingerprint() + "\n"
+                        : "This plugin is not signed.\n")
                         + "The download is verified against the SHA-256 listed in the repository:\n" + entry.sha256(),
                 action + " plugin", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
         if (choice != JOptionPane.OK_OPTION) {
@@ -394,10 +435,10 @@ public final class PluginManagerPanel extends JPanel {
         progress.setVisible(true);
         statusLabel.setText("Downloading " + entry.name() + "...");
         updateButtons();
-        new SwingWorker<Path, Integer>() {
+        new SwingWorker<PluginRepositoryService.DownloadResult, Integer>() {
             @Override
-            protected Path doInBackground() throws Exception {
-                return repository.downloadPlugin(entry, this::publish);
+            protected PluginRepositoryService.DownloadResult doInBackground() throws Exception {
+                return repository.download(entry, this::publish);
             }
 
             @Override
@@ -409,9 +450,31 @@ public final class PluginManagerPanel extends JPanel {
             protected void done() {
                 Path downloaded = null;
                 try {
-                    downloaded = get();
+                    PluginRepositoryService.DownloadResult result = get();
+                    downloaded = result.file();
+                    PluginTrust.Outcome outcome = PluginTrust.evaluate(settings, pinKey(entry), result.status(), result.fingerprint());
+                    if (outcome.decision().blocked()) {
+                        statusLabel.setText("Install blocked");
+                        error(outcome.message());
+                        return;
+                    }
+                    boolean trustPublisher = false;
+                    if (outcome.decision() == PluginTrust.Decision.PROMPT_NEW_PUBLISHER) {
+                        int trust = JOptionPane.showConfirmDialog(PluginManagerPanel.this,
+                                "The signature is valid and was made by publisher\n" + result.fingerprint() + "\n\n"
+                                        + "You have not trusted this publisher before. Trust them and install?\n"
+                                        + "Future updates must be signed by the same publisher.",
+                                "New plugin publisher", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+                        if (trust != JOptionPane.OK_OPTION) {
+                            statusLabel.setText("Install cancelled");
+                            return;
+                        }
+                        trustPublisher = true;
+                    }
                     PluginRecord record = host.install(downloaded, entry.fileName().isEmpty() ? entry.id() + ".jar" : entry.fileName(), entry.id());
-                    statusLabel.setText((existing == null ? "Installed " : "Updated ") + record.name() + " " + record.version());
+                    PluginTrust.recordInstall(settings, record.pluginId(), result.fingerprint(), trustPublisher);
+                    statusLabel.setText((existing == null ? "Installed " : "Updated ") + record.name() + " " + record.version()
+                            + (result.status() == SignatureStatus.VALID ? " (signature verified)" : ""));
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException exception) {
